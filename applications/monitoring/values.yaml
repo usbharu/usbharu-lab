@@ -1,3 +1,14 @@
+ingress:
+  annotations:
+    cert-manager.io/issuer: "selfsigning-issuer"
+  hosts: "grafana.lab.usbharu.dev.internal"
+  tls:
+  - hosts:
+    - "grafana.lab.usbharu.dev.internal"
+    secretName: grafana-selfsigning-cert
+service:
+  externalPort: 80
+
 kube-prometheus-stack:
   prometheus-node-exporter:
     hostRootFsMount:
@@ -9,13 +20,3 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
-
-ingress:
-  annotations:
-  hosts: "grafana.lab.usbharu.dev.internal"
-  tls:
-  - hosts:
-    - "grafana.lab.usbharu.dev.internal"
-    secretName: grafana-selfsigning-cert
-service:
-  externalPort: 80
