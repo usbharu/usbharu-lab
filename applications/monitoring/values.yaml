@@ -9,3 +9,13 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
+
+ingress:
+  annotations:
+  hosts: "grafana.lab.usbharu.dev.internal"
+  tls:
+  - hosts:
+    - "grafana.lab.usbharu.dev.internal"
+    secretName: grafana-selfsigning-cert
+service:
+  externalPort: 80
