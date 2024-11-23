@@ -1,0 +1,8 @@
+postgresql:
+  namespace: "postgresql"
+
+traefik:
+  namespace: "traefik"
+
+monitoring:
+  namespace: "monitoring"

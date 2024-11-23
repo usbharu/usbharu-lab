@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: {{ .Values.cert-manager.namespace }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.argocd.repositoryUrl }}
+    path: cert-manager
+    targetRevision: main
+    helm:
+      releaseName: release
+      version: v3
+      valueFiles:
+      - values.yaml
+      parameters:
+      - name: argocd.repositoryUrl
+      value: {{ .Values.argocd.repositoryUrl }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.cert-manager.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
