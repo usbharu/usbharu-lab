@@ -12,6 +12,7 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" sh -s - --disable=traef
 
 sleep 5
 
+sudo k3s kubectl create namespace argocd
 sudo k3s kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 sleep 10
