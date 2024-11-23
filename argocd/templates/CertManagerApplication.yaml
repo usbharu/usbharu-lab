@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: {{ .Values.argocd.repositoryUrl }}
     path: cert-manager
-    targetRevision: main
+    targetRevision: master
     helm:
       releaseName: release
       version: v3
