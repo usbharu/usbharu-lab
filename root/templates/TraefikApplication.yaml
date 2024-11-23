@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: {{ .Values.traefik.namespace }}
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.argocd.repositoryUrl }}
+    path: applications/traefik
+    targetRevision: main
+    helm:
+      releaseName: release
+      version: v3
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.traefik.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true

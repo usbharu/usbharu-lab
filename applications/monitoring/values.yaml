@@ -1,0 +1,11 @@
+kube-prometheus-stack:
+  prometheus-node-exporter:
+    hostRootFsMount:
+      enabled: false
+  prometheus:
+    prometheusSpec:
+      podMonitorSelectorNilUsesHelmValues: false
+      probeSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      serviceMonitorSelectorNilUsesHelmValues: false
+      logLevel: info
