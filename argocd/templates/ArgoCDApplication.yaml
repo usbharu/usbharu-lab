@@ -21,7 +21,7 @@ spec:
       - values.yaml
       parameters:
       - name: argocd.repositoryUrl
-      value: {{ .Values.argocd.repositoryUrl }}
+        value: {{ .Values.argocd.repositoryUrl }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.argocd.namespace }}
