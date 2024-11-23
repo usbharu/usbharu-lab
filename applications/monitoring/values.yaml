@@ -9,8 +9,3 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
-  prometheusOperator:
-    tls:
-      enabled: false
-    admissionWebhooks:
-      enabled: false
