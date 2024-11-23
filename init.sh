@@ -19,7 +19,7 @@ sleep 10
 
 sudo kubectl config view --raw
 
-sudo helm install init ./argocd
+sudo helm --kubeconfig /etc/rancher/k3s/k3s.yaml install init ./argocd
 
 sleep 10
 
