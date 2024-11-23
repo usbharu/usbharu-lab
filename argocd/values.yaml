@@ -1,5 +1,5 @@
 argocd:
-  repositoryUrl: 'https://github.com/usbharu/argocd-test.git'
+  repositoryUrl: 'https://github.com/usbharu/usbharu-lab.git'
   namespace: "argocd-root"
 
 certManager:
