@@ -1,6 +1,6 @@
 argocd:
   repositoryUrl: 'https://github.com/usbharu/usbharu-lab.git'
-  namespace: "argocd-root"
+  namespace: "argocd"
 
 certManager:
   namespace: "cert-manager"
