@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: {{ .Values.argocd.repositoryUrl }}
     path: applications/monitoring
-    targetRevision: main
+    targetRevision: master
     helm:
       releaseName: release
       version: v3
