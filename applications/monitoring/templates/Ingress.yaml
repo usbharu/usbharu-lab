@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-{{- $serviceName := "monitoring" -}}
+{{- $serviceName := print .Release.Name "-grafana" -}}
 {{- $servicePort := .Values.service.externalPort -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
