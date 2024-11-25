@@ -1,0 +1,15 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: "{{ .Release.Name }}-misskey-cluster"
+spec:
+  instances: 3
+  storage:
+    size: 10Gi
+  monitoring:
+    enablePodMonitor: true
+  bootstrap:
+    initdb:
+      database: misskey
+      owner: misskey
+      secret: "{{ .Release.Name }}-misskey-cluster-secret"
