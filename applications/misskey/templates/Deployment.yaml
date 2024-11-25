@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-misskey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-misskey
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-misskey
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-misskey-server-container
+          image: misskey/misskey:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          command: ["pnpm", "run", "migrateandstart"]
+          volumeMounts:
+            - name: misskey-default-yaml-config
+              mountPath: /misskey/.config
+      volumes:
+        - name: misskey-default-yaml-config
+          configMap:
+            name: {{ .Release.Name }}-misskey-config

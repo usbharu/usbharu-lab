@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: {{ .Release.Name }}-redis
+spec:
+  restartPolicy: Always
+  containers:
+  - name: redis
+    image: redis:7
+    volumeMounts:
+    - mountPath: /data
+      name: redis-volume
+    resources:
+      limits:
+        memory: "100Mi"
+        cpu: "250m"
+    ports:
+    - containerPort: 6379
+  volumes:
+  - name: redis-volume
+    persistentVolumeClaim:
+      claimName: pvc-{{ .Release.Name }}-misskey-redis
