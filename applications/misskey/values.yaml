@@ -1,2 +1,4 @@
 misskey:
   url: "https://misskey.usbharu.dev"
+  port: 3000
+  id: "aid"

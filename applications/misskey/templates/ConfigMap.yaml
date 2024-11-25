@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-misskey-config
+data:
+  default.yml: |-
+    url: {{ .Values.misskey.url }}
+    port: 3000
+
+    db:
+      host: {{ .Release.Name }}-misskey-cluster-rw
+      port: 5432
+      db: misskey
+      user: app
+
+    dbReplications: false
+
+    redis:
+      host: {{ .Release.Name }}-redis-service
+      port: 6379
+
+    id: {{ .Values.misskey.id }}
+    signToActivityPubGet: true
