@@ -6,3 +6,6 @@ traefik:
 
 monitoring:
   namespace: "monitoring"
+
+misskey:
+  namespace: "misskey"
