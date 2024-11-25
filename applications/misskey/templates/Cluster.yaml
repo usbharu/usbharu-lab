@@ -12,4 +12,3 @@ spec:
     initdb:
       database: misskey
       owner: misskey
-      secret: "{{ .Release.Name }}-misskey-cluster-secret"
