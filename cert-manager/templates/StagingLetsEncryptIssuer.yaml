@@ -9,6 +9,8 @@ spec:
     privateKeySecretRef:
       name: acme-client-staging-letsencrypt
     solvers:
-      - http01:
-          ingress:
-            class: cloudflare-tunnel
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-external-secret
+              key: apiToken
