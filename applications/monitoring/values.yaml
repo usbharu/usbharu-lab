@@ -2,7 +2,8 @@ ingress:
   enabled: true
   annotations:
   - cert-manager.io/issuer: "selfsigning-issuer"
-  hosts: "grafana.lab.usbharu.dev.internal"
+  hosts:
+  - "grafana.lab.usbharu.dev.internal"
   tls:
   - hosts:
     - "grafana.lab.usbharu.dev.internal"
