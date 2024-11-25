@@ -1,4 +1,8 @@
 misskey:
-  url: "https://misskey.usbharu.dev"
+  url: "https://staging-misskey.lab.usbharu.dev"
   port: 3000
   id: "aid"
+
+ingress:
+  host: "staging-misskey.lab.usbharu.dev"
+  issuer: staging-letsencrypt-issuer

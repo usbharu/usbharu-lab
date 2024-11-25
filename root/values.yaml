@@ -9,3 +9,6 @@ monitoring:
 
 misskey:
   namespace: "misskey"
+
+cloudflareTunnel:
+  namespace: "cloudflare-tunnel"
