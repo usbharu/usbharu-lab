@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-misskey
   annotations:
-    cert-manager.io/issuer: {{ .Values.ingress.issuer }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.issuer }}
 spec:
   ingressClassName: cloudflare-tunnel
   tls:
