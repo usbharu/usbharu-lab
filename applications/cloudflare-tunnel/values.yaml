@@ -2,6 +2,6 @@ cloudflare-tunnel-ingress-controller:
   cloudflare:
     secretRef:
       name: "cloudflare-external-secret"
-      accountIDKey: account_id
-      tunnelNameKey: tunnel_name
-      apiTokenKey: api_token
+      accountIDKey: accountId
+      tunnelNameKey: tunnelName
+      apiTokenKey: apiToken
