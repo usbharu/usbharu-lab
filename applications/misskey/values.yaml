@@ -10,4 +10,4 @@ ingress:
 database:
   backup:
     bucketName: misskey-backup
-    endpointUrl: "https://76906b4e38909e314e89939ec9f8e485.r2.cloudflarestorage.com/misskey-backup"
+    endpointUrl: "https://76906b4e38909e314e89939ec9f8e485.r2.cloudflarestorage.com"
