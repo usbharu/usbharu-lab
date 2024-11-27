@@ -16,6 +16,9 @@ spec:
     barmanObjectStore:
       destinationPath: "s3:{{ .Values.database.backup.bucketName }}/{{ .Release.Name }}"
       endpointURL: {{ .Values.database.backup.endpointUrl }}
+      wal:
+        compression: gzip
+        encryption: AES256
       s3Credentials:
         accessKeyId:
           key: "misskey-backup-cred"
