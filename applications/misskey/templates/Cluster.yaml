@@ -12,3 +12,17 @@ spec:
     initdb:
       database: misskey
       owner: misskey
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3:{{ .Values.database.backup.bucketName }}/{{ .Release.Name }}"
+      endpointURL: {{ .Values.database.backup.endpointUrl }}
+      s3Credentials:
+        accessKeyId:
+          key: "misskey-backup-cred"
+          name: "ACCESS_KEY_ID"
+        region:
+          key: "misskey-backup-cred"
+          name: "REGION"
+        secretAccessKey:
+          key: "misskey-backup-cred"
+          name: "ACCESS_SECRET_KEY"
