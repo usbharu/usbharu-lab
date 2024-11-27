@@ -2,14 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-misskey
-  annotations:
-    cert-manager.io/cluster-issuer: {{ .Values.ingress.issuer }}
 spec:
   ingressClassName: cloudflare-tunnel
-  tls:
-    - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: {{ .Release.Name }}-misskey-{{ .Values.ingress.issuer }}-cert
   rules:
     - host: {{ .Values.ingress.host }}
       http:
