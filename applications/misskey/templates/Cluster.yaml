@@ -22,11 +22,11 @@ spec:
         encryption: AES256
       s3Credentials:
         accessKeyId:
-          key: "misskey-backup-cred"
-          name: "ACCESS_KEY_ID"
+          name: "misskey-backup-cred"
+          key: "ACCESS_KEY_ID"
         region:
-          key: "misskey-backup-cred"
-          name: "REGION"
+          name: "misskey-backup-cred"
+          key: "REGION"
         secretAccessKey:
-          key: "misskey-backup-cred"
-          name: "ACCESS_SECRET_KEY"
+          name: "misskey-backup-cred"
+          key: "ACCESS_SECRET_KEY"
