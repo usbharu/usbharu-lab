@@ -3,6 +3,7 @@ kind: Cluster
 metadata:
   name: "{{ .Release.Name }}-misskey-cluster"
 spec:
+  enableSuperuserAccess: true
   instances: 3
   storage:
     size: 10Gi
