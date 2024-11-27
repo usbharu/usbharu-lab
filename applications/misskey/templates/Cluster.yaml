@@ -24,9 +24,6 @@ spec:
         accessKeyId:
           name: "misskey-backup-cred"
           key: "ACCESS_KEY_ID"
-        region:
-          name: "misskey-backup-cred"
-          key: "REGION"
         secretAccessKey:
           name: "misskey-backup-cred"
           key: "ACCESS_SECRET_KEY"
