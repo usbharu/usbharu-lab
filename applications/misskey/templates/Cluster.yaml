@@ -15,7 +15,7 @@ spec:
       owner: misskey
   backup:
     barmanObjectStore:
-      destinationPath: "s3://{{ .Values.database.backup.bucketName }}/{{ .Release.Name }}"
+      destinationPath: "s3://{{ .Values.database.backup.bucketName }}"
       endpointURL: {{ .Values.database.backup.endpointUrl }}
       wal:
         compression: gzip
