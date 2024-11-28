@@ -3,3 +3,12 @@ argocd:
 
 certManager:
   namespace: "cert-manager"
+
+secret:
+  cloudflare:
+    accountId: ""
+    tunnel:
+      apiToken: ""
+    r2:
+      accessKey: ""
+      accessSecretKey: ""
