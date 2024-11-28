@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-postgresql
+spec:
+  containers:
+    - name: postgresql
+      image: postgres:16.6
+      volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgresql-volume
+      ports:
+        - containerPort: 5432
+  volumes:
+    - name: postgresql-volume
+      persistentVolumeClaim:
+        claimName: pvc-{{ .Release.Name }}-misskey-postgresql
+  restartPolicy: Always
