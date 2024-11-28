@@ -9,6 +9,8 @@ spec:
       volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgresql-volume
+        - mountPath: /etc/postgresql/postgresql.conf
+          name: postgresql-config
       ports:
         - containerPort: 5432
       env:
@@ -18,4 +20,7 @@ spec:
     - name: postgresql-volume
       persistentVolumeClaim:
         claimName: pvc-{{ .Release.Name }}-misskey-postgresql
+    - name: postgresql-config
+      configMap:
+        name: postgresql-config
   restartPolicy: Always
