@@ -7,18 +7,18 @@ metadata:
 spec:
   restartPolicy: Always
   containers:
-  - name: redis
-    image: redis:7
-    volumeMounts:
-    - mountPath: /data
-      name: redis-volume
-    resources:
-      limits:
-        memory: "100Mi"
-        cpu: "250m"
-    ports:
-    - containerPort: 6379
+    - name: redis
+      image: redis:7
+      volumeMounts:
+        - mountPath: /data
+          name: redis-volume
+      resources:
+        limits:
+          memory: "100Mi"
+          cpu: "250m"
+      ports:
+        - containerPort: 6379
   volumes:
-  - name: redis-volume
-    persistentVolumeClaim:
-      claimName: pvc-{{ .Release.Name }}-misskey-redis
+    - name: redis-volume
+      persistentVolumeClaim:
+        claimName: pvc-{{ .Release.Name }}-misskey-redis

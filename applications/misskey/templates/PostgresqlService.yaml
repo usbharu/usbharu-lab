@@ -6,6 +6,6 @@ spec:
   selector:
     app: {{ .Release.Name }}-postgresql
   ports:
-    - protocol: TCP
+    - name: http
       port: 5432
   
