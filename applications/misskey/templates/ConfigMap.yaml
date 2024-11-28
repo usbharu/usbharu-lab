@@ -11,7 +11,8 @@ data:
       host: {{ .Release.Name }}-postgresql-service
       port: 5432
       db: misskey
-      user: misskey
+      user: postgres
+      pass: postgres
 
     dbReplications: false
 
