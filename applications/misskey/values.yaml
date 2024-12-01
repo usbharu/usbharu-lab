@@ -4,7 +4,7 @@ misskey:
   id: "aid"
 
 ingress:
-  host: "staging-misskey.usbharu.dev"
+  host: "misskey.usbharu.dev"
   issuer: staging-letsencrypt-issuer
 
 database:
