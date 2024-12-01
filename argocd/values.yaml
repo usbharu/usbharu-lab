@@ -12,3 +12,13 @@ secret:
     r2:
       accessKey: ""
       accessSecretKey: ""
+
+  nowplaying:
+    spotify:
+      accessToken: ""
+      refreshToken: ""
+      clientId: ""
+      clientSecret: ""
+    misskey:
+      token: ""
+      endpoint: ""
