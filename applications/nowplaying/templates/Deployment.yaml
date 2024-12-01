@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: now-playing
-          image: git.usbharu.dev/usbharu/now-playing:latest
+          image: git.usbharu.dev/usbharu/now-playing:a6fc757
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
