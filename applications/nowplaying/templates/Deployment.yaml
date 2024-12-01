@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: now-playing
+  labels:
+    app: now-playing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: now-playing
+  template:
+    metadata:
+      name: now-playing
+      labels:
+        app: now-playing
+    spec:
+      containers:
+        - name: now-playing
+          image: git.usbharu.dev/usbharu/nowplaying:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: "now-playing-secret"
+      restartPolicy: Always
+      
