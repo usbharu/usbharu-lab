@@ -10,11 +10,12 @@ spec:
         spec:
           containers:
             - name: backup-cron-job
-              image: git.usbharu.dev/usbharu/pg_backup_job:e740a5d
+              image: git.usbharu.dev/usbharu/pg_backup_job:0e19558
               imagePullPolicy: IfNotPresent
               envFrom:
                 - secretRef:
                     name: backup-cron-job-secret
+
               env:
                 - name: PG_HOST
                   value: {{ .Release.Name }}-postgresql-service
