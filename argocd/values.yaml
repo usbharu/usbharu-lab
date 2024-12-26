@@ -12,6 +12,7 @@ secret:
     r2:
       accessKey: ""
       accessSecretKey: ""
+      endpoint: ""
 
   nowplaying:
     spotify:

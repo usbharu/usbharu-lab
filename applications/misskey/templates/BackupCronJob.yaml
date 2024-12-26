@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-cron-job
+spec:
+  schedule: "0 3 * * *" #毎朝三時
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: backup-cron-job
+              image: git.usbharu.dev/usbharu/pg_backup_job:e740a5d
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: backup-cron-job-secret
+              env:
+                - name: PG_HOST
+                  value: {{ .Release.Name }}-postgresql-service
+                - name: PG_PORT
+                  value: "5432"
+                - name: PG_USER
+                  value: postgres
+                - name: PG_PASSWORD
+                  value: postgres
+                - name: PG_DATABASE
+                  value: misskey
+                - name: S3_BUCKET
+                  value: misskey-backup
+
+          restartPolicy: OnFailure
