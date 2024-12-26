@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
             - name: backup-cron-job
-              image: git.usbharu.dev/usbharu/pg_backup_job:0e19558
+              image: git.usbharu.dev/usbharu/pg_backup_job:7a98ead
               imagePullPolicy: IfNotPresent
               envFrom:
                 - secretRef:
