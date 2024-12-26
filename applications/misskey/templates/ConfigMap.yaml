@@ -8,11 +8,10 @@ data:
     port: 3000
 
     db:
-      host: {{ .Release.Name }}-postgresql-service
+      host: {{ .Release.Name }}-misskey-cluster-rw
       port: 5432
       db: misskey
-      user: postgres
-      pass: postgres
+      user: misskey
 
     dbReplications: false
 

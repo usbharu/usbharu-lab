@@ -22,6 +22,12 @@ spec:
               cpu: "1"
               memory: "2Gi"
           command: [ "pnpm", "run", "migrateandstart" ]
+          env:
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-misskey-cluster-app
+                  key: password
 
           volumeMounts:
             - name: misskey-default-yaml-config
