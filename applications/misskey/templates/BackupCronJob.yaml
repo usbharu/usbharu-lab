@@ -18,13 +18,16 @@ spec:
 
               env:
                 - name: PG_HOST
-                  value: {{ .Release.Name }}-postgresql-service
+                  value: {{ .Release.Name }}-misskey-cluster-rw
                 - name: PG_PORT
                   value: "5432"
                 - name: PG_USER
-                  value: postgres
+                  value: misskey
                 - name: PG_PASSWORD
-                  value: postgres
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-misskey-cluster-app
+                      key: password
                 - name: PG_DATABASE
                   value: misskey
                 - name: S3_BUCKET
