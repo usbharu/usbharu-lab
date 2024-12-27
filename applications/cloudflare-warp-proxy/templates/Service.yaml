@@ -8,6 +8,4 @@ spec:
   ports:
     - protocol: TCP
       port: 40000
-      targetPort: 40000
-  type: ClusterIP
   
