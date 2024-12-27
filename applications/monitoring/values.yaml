@@ -22,10 +22,11 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
+  alertmanagerSpec:
+    replicas: 2
   alertmanager:
     enabled: true
     config:
-      replicas: 2
       route:
         receiver: "discord-webhook"
         routes:
