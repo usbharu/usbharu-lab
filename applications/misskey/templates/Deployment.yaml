@@ -9,6 +9,8 @@ spec:
       app: {{ .Release.Name }}-misskey
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/ConfigMap.yaml") . | sha256sum }}
       labels:
         app: {{ .Release.Name }}-misskey
     spec:
