@@ -2,7 +2,7 @@ misskey:
   url: "https://negi.usbharu.dev"
   port: 3000
   id: "aidx"
-  proxy: "http://release.proxy:40000"
+  proxy: "http://release-cloudflare-warp-service.proxy:40000"
 
 ingress:
   host: "negi.usbharu.dev"

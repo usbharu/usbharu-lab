@@ -2,7 +2,7 @@ misskey:
   url: "https://misskey.usbharu.dev"
   port: 3000
   id: "aid"
-  proxy: "http://release.proxy:40000"
+  proxy: "http://release-cloudflare-warp-service.proxy:40000"
 
 ingress:
   host: "misskey.usbharu.dev"
