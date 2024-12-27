@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: backup-cron-job
+  name: {{ .Release.Name }}-backup-cron-job
 spec:
   schedule: "0 3 * * *" #毎朝三時
   jobTemplate:
@@ -9,7 +9,7 @@ spec:
       template:
         spec:
           containers:
-            - name: backup-cron-job
+            - name: {{ .Release.Name }}-backup-cron-job
               image: git.usbharu.dev/usbharu/pg_backup_job:a483280
               imagePullPolicy: IfNotPresent
               envFrom:
