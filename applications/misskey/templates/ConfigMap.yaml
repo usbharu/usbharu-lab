@@ -5,7 +5,7 @@ metadata:
 data:
   default.yml: |-
     url: {{ .Values.misskey.url }}
-    port: 3000
+    port: {{ .Values.misskey.port }}
 
     db:
       host: {{ .Release.Name }}-misskey-cluster-rw

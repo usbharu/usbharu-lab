@@ -31,6 +31,6 @@ spec:
                 - name: PG_DATABASE
                   value: misskey
                 - name: S3_BUCKET
-                  value: misskey-backup
+                  value: {{ .Values.backup.bucketName }}/{{ .Release.Name }}
 
           restartPolicy: OnFailure
