@@ -8,4 +8,4 @@ ingress:
   host: "negi.usbharu.dev"
 
 backup:
-  bucketName: misskey-backup-negi
+  bucketName: misskey-backup
