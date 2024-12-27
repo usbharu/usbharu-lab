@@ -6,6 +6,7 @@ traefik:
 
 monitoring:
   namespace: "monitoring"
+  webhookUrl: ""
 
 misskey:
   namespace: "misskey"

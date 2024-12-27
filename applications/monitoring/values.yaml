@@ -24,3 +24,14 @@ kube-prometheus-stack:
       logLevel: info
   alertmanager:
     enabled: true
+    config:
+      replicas: 2
+      route:
+        receiver: "discord-webhook"
+        routes:
+          - receiver: "discord-webhook"
+        receivers:
+          - name: "discord-webhook"
+            webhook_configs:
+              - url: "https://example.com"
+                send_resolved: true
