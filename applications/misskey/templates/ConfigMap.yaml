@@ -14,7 +14,7 @@ data:
       user: misskey
 
     dbReplications: false
-
+    proxy: {{ .Values.misskey.proxy }}
     redis:
       host: {{ .Release.Name }}-redis-service
       port: 6379
