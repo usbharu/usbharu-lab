@@ -22,3 +22,5 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
+  alertmanager:
+    enabled: true
