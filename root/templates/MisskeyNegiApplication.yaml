@@ -1,26 +1,26 @@
-{{/*apiVersion: argoproj.io/v1alpha1*/}}
-{{/*kind: Application*/}}
-{{/*metadata:*/}}
-{{/*  name: misskey*/}}
-{{/*  namespace: argocd*/}}
-{{/*spec:*/}}
-{{/*  project: default*/}}
-{{/*  source:*/}}
-{{/*    repoURL: {{ .Values.argocd.repositoryUrl }}*/}}
-{{/*    path: applications/misskey*/}}
-{{/*    targetRevision: master*/}}
-{{/*    helm:*/}}
-{{/*      releaseName: negi*/}}
-{{/*      version: v3*/}}
-{{/*      valueFiles:*/}}
-{{/*        - values-negi.yaml*/}}
-{{/*  destination:*/}}
-{{/*    server: https://kubernetes.default.svc*/}}
-{{/*    namespace: {{ .Values.misskey.namespace }}*/}}
-{{/*  syncPolicy:*/}}
-{{/*    automated:*/}}
-{{/*      prune: true*/}}
-{{/*      selfHeal: true*/}}
-{{/*    syncOptions:*/}}
-{{/*    - CreateNamespace=true*/}}
-{{/*    - ServerSideApply=true*/}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: misskey
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.argocd.repositoryUrl }}
+    path: applications/misskey
+    targetRevision: master
+    helm:
+      releaseName: negi
+      version: v3
+      valueFiles:
+        - values-negi.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.misskey.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
