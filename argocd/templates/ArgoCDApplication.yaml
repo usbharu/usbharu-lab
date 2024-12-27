@@ -17,6 +17,8 @@ spec:
       parameters:
       - name: argocd.repositoryUrl
         value: {{ .Values.argocd.repositoryUrl }}
+      - name: monitoring.webhookUrl
+        value: {{ .Values.monitoring.webhookUrl }}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

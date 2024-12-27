@@ -23,3 +23,6 @@ secret:
     misskey:
       token: ""
       endpoint: ""
+
+monitoring:
+  webhookUrl: ""
