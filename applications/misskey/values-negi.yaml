@@ -1,0 +1,10 @@
+misskey:
+  url: "https://negi.usbharu.dev"
+  port: 3000
+  id: "aidx"
+
+ingress:
+  host: "negi.usbharu.dev"
+
+backup:
+  bucketName: misskey-backup-negi

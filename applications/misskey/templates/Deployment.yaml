@@ -19,8 +19,8 @@ spec:
             - containerPort: 3000
           resources:
             limits:
-              cpu: "1"
-              memory: "2Gi"
+              cpu: "2"
+              memory: "4Gi"
           command: [ "pnpm", "run", "migrateandstart" ]
           env:
             - name: DATABASE_PASSWORD
