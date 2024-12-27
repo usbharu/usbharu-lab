@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-cloudflare-warp-proxy
+  labels:
+    app: {{ .Release.Name }}-cloudflare-warp-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-cloudflare-warp-proxy
+  template:
+    metadata:
+      name: {{ .Release.Name }}-cloudflare-warp-proxy
+      labels:
+        app: {{ .Release.Name }}-cloudflare-warp-proxy
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-cloudflare-warp-proxy
+          image: seiry/cloudflare-warp-proxy
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 40000
+              protocol: TCP
+      restartPolicy: Always
+      
