@@ -44,6 +44,9 @@ spec:
                 - curl
                 - -X POST
                 - -f
+                - -k
+                - "-H \"Content-Type: application/json\""
+                - "-d \"{}\""
                 - {{ .Values.misskey.url }}/api/ping
           readinessProbe:
             initialDelaySeconds: 10
@@ -53,6 +56,9 @@ spec:
                 - curl
                 - -X POST
                 - -f
+                - -k
+                - "-H \"Content-Type: application/json\""
+                - "-d \"{}\""
                 - {{ .Values.misskey.url }}/api/ping
       volumes:
         - name: misskey-default-yaml-config
