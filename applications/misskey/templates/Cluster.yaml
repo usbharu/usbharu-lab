@@ -2,6 +2,8 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: "{{ .Release.Name }}-misskey-cluster"
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   logLevel: debug
   enableSuperuserAccess: true

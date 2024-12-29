@@ -2,6 +2,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: pvc-{{ .Release.Name }}-misskey-redis
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false
 spec:
   accessModes:
   - ReadWriteOnce
