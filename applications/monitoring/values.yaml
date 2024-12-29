@@ -22,9 +22,10 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       serviceMonitorSelectorNilUsesHelmValues: false
       logLevel: info
-  alertmanagerSpec:
-    replicas: 2
+
   alertmanager:
+    alertmanagerSpec:
+      replicas: 2
     enabled: true
     config:
       route:
