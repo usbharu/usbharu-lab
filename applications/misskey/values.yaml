@@ -3,6 +3,7 @@ misskey:
   port: 3000
   id: "aid"
   proxy: "http://release-cloudflare-warp-proxy-service.proxy:40000"
+  image: misskey/misskey:2024.11.0
 
 ingress:
   host: "misskey.usbharu.dev"
