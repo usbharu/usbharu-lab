@@ -15,7 +15,7 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
-        - name: kube-prometheus-stack.alertmanager.config.receivers[0].discord_configs[0].url
+        - name: kube-prometheus-stack.alertmanager.config.receivers[0].discord_configs[0].webhook_url
           value: {{ .Values.monitoring.webhookUrl }}
   destination:
     server: https://kubernetes.default.svc
