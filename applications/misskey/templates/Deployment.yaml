@@ -42,11 +42,14 @@ spec:
             exec:
               command:
                 - curl
-                - -X POST
+                - -X
+                - POST
                 - -f
                 - -k
-                - '-H "Content-Type: application/json"'
-                - '-d "{}"'
+                - -H
+                - "Content-Type: application/json"
+                - -d
+                - '{}'
                 - {{ .Values.misskey.url }}/api/ping
           readinessProbe:
             initialDelaySeconds: 10
