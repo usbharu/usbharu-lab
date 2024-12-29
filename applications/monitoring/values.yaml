@@ -36,5 +36,5 @@ kube-prometheus-stack:
         - name: "discord-webhook"
           discord_configs:
 #          webhook_configs:
-            - url: "https://example.com"
+            - webhook_url: "https://example.com"
               send_resolved: true
