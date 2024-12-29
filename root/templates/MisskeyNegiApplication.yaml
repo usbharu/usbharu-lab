@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: misskey
+  name: misskey-negi
   namespace: argocd
 spec:
   project: default
