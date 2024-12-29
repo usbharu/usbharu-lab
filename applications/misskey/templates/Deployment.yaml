@@ -50,7 +50,7 @@ spec:
                 - "Content-Type: application/json"
                 - -d
                 - '{}'
-                - {{ .Values.misskey.url }}/api/ping
+                - http://localhost:3000/api/ping
           readinessProbe:
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -65,7 +65,7 @@ spec:
                 - "Content-Type: application/json"
                 - -d
                 - '{}'
-                - {{ .Values.misskey.url }}/api/ping
+                - http://localhost:3000/api/ping
       volumes:
         - name: misskey-default-yaml-config
           configMap:
