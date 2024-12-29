@@ -32,8 +32,8 @@ kube-prometheus-stack:
         receiver: "discord-webhook"
         routes:
           - receiver: "discord-webhook"
-        receivers:
-          - name: "discord-webhook"
-            webhook_configs:
+      receivers:
+        - name: "discord-webhook"
+          webhook_configs:
               - url: "https://example.com"
                 send_resolved: true
