@@ -14,9 +14,9 @@ spec:
       version: v3
       valueFiles:
         - values.yaml
-{{/*      parameters:*/}}
-{{/*        - name: kube-prometheus-stack.alertmanager.config.route.receivers[0].webhook_configs[0].url*/}}
-{{/*          value: {{ .Values.monitoring.webhookUrl }}*/}}
+      parameters:
+        - name: kube-prometheus-stack.alertmanager.config.receivers[0].webhook_configs[0].url
+          value: {{ .Values.monitoring.webhookUrl }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.monitoring.namespace }}
