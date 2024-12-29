@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: {{ .Release.Name }}-misskey-server-container
-          image: misskey/misskey:latest
+          image: {{ .Values.misskey.image }}
           ports:
             - containerPort: 3000
           resources:
@@ -33,10 +33,27 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-misskey-cluster-app
                   key: password
-
           volumeMounts:
             - name: misskey-default-yaml-config
               mountPath: /misskey/.config
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            exec:
+              command:
+                - curl
+                - -X POST
+                - -f
+                - {{ .Values.misskey.url }}/api/ping
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            exec:
+              command:
+                - curl
+                - -X POST
+                - -f
+                - {{ .Values.misskey.url }}/api/ping
       volumes:
         - name: misskey-default-yaml-config
           configMap:
