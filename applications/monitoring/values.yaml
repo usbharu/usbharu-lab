@@ -13,13 +13,13 @@ service:
 
 kube-prometheus-stack:
   kubeControllerManager:
-    enabled: true
+    enabled: false
   kubeScheduler:
-    enabled: true
+    enabled: false
   kubeProxy:
-    enabled: true
+    enabled: false
   kubeEtcd:
-    enabled: true
+    enabled: false
   prometheus-node-exporter:
     hostRootFsMount:
       enabled: false
