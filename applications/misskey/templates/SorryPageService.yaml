@@ -1,0 +1,14 @@
+{{ if .Values.maintenance.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-misskey-sorry-page-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-misskey-sorry-page
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+{{ end }}

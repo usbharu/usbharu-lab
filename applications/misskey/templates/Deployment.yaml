@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-misskey
 spec:
-  replicas: 1
+  replicas: {{ .Values.maintenance.misskeyReplica }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-misskey
