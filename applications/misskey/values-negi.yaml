@@ -4,9 +4,19 @@ misskey:
   id: "aidx"
   proxy: "http://release-cloudflare-warp-proxy-service.proxy:40000"
   image: misskey/misskey:2024.11.0
+  clusterLimit: 1
+  deliverJobConcurrency: 128
+  inboxJobConcurrency: 16
+  relationshipJobConcurrency: 16
+  deliverJobPerSec: 128
+  inboxJobPerSec: 32
+  relationshipJobPerSec: 64
+  deliverJobMaxAttempts: 12
+  inboxJobMaxAttempts: 8
 
 ingress:
   host: "negi.usbharu.dev"
 
 backup:
   bucketName: misskey-backup
+  cron: "0 3 * * *"

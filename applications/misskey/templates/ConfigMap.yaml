@@ -19,5 +19,26 @@ data:
       host: {{ .Release.Name }}-redis-service
       port: 6379
 
+    clusterLimit: {{ .Values.misskey.clusterLimit }}
+
+    deliverJobConcurrency: {{ .Values.misskey.deliverJobConcurrency }}
+    inboxJobConcurrency: {{ .Values.misskey.inboxJobConcurrency }}
+    relationshipJobConcurrency: {{ .Values.misskey.relationshipJobConcurrency }}
+
+    deliverJobPerSec: {{ .Values.misskey.deliverJobPerSec }}
+    inboxJobPerSec: {{ .Values.misskey.inboxJobPerSec }}
+    relationshipJobPerSec: {{ .Values.misskey.relationshipJobPerSec }}
+
+    deliverJobMaxAttempts: {{ .Values.misskey.deliverJobMaxAttempts }}
+    inboxJobMaxAttempts: {{ .Values.misskey.inboxJobMaxAttempts }}
+
+    proxyBypassHosts:
+      - api.deepl.com
+      - api-free.deepl.com
+      - www.recaptcha.net
+      - hcaptcha.com
+      - challenges.cloudflare.com
+    proxyRemoteFiles: true
+
     id: {{ .Values.misskey.id }}
     signToActivityPubGet: true
