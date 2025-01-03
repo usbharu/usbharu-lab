@@ -1,0 +1,27 @@
+{{ if .Values.maintenance.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-misskey-sorry-page
+  labels:
+    app: {{ .Release.Name }}-misskey-sorry-page
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-misskey-sorry-page
+  template:
+    metadata:
+      name: {{ .Release.Name }}-misskey-sorry-page
+      labels:
+        app: {{ .Release.Name }}-misskey-sorry-page
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-misskey-sorry-page
+          image: git.usbharu.dev/usbharu/misskey-sorry-page:6cf1015
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+      restartPolicy: Always
+{{ end }}

@@ -20,3 +20,7 @@ ingress:
 backup:
   bucketName: misskey-backup
   cron: "0 8 * * *"
+
+maintenance:
+  enable: false
+  misskeyReplica: 1
