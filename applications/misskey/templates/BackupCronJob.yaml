@@ -3,7 +3,8 @@ kind: CronJob
 metadata:
   name: {{ .Release.Name }}-backup-cron-job
 spec:
-  schedule: "0 3 * * *" #毎朝三時
+  timeZone: "Asia/Tokyo"
+  schedule: {{ .Values.backup.cron }} #毎朝三時
   jobTemplate:
     spec:
       template:
