@@ -17,10 +17,32 @@ spec:
     spec:
       containers:
         - name: {{ .Release.Name }}-cloudflare-warp-proxy
-          image: seiry/cloudflare-warp-proxy
+          image: git.usbharu.dev/usbharu/warp-proxy:a16d5ce
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 40000
               protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 2
+            exec:
+              command:
+                - curl
+                - -f
+                - https://usbharu.dev
+                - -x
+                - http://localhost:40000
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            exec:
+              command:
+                - curl
+                - -f
+                - https://usbharu.dev
+                - -x
+                - http://localhost:40000
       restartPolicy: Always
       
