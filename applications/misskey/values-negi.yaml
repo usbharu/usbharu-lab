@@ -4,13 +4,13 @@ misskey:
   id: "aidx"
   proxy: "http://release-cloudflare-warp-proxy-service.proxy:40000"
   image: misskey/misskey:2024.11.0
-  clusterLimit: 1
+  clusterLimit: 2
   deliverJobConcurrency: 128
-  inboxJobConcurrency: 16
-  relationshipJobConcurrency: 16
+  inboxJobConcurrency: 128
+  relationshipJobConcurrency: 128
   deliverJobPerSec: 128
-  inboxJobPerSec: 32
-  relationshipJobPerSec: 64
+  inboxJobPerSec: 128
+  relationshipJobPerSec: 128
   deliverJobMaxAttempts: 12
   inboxJobMaxAttempts: 8
 
