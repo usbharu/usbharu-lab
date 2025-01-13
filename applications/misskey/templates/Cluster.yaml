@@ -5,9 +5,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: Delete=false
 spec:
-  logLevel: debug
   enableSuperuserAccess: true
-  instances: 1
+  instances: 3
   storage:
     size: 10Gi
   monitoring:
