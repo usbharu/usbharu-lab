@@ -1,0 +1,26 @@
+misskey:
+  url: "https://staging-misskey.usbharu.dev"
+  port: 3000
+  id: "aidx"
+  proxy: "http://127.0.0.1:40000"
+  image: misskey/misskey:2025.1.0
+  clusterLimit: 2
+  deliverJobConcurrency: 128
+  inboxJobConcurrency: 64
+  relationshipJobConcurrency: 16
+  deliverJobPerSec: 128
+  inboxJobPerSec: 64
+  relationshipJobPerSec: 64
+  deliverJobMaxAttempts: 12
+  inboxJobMaxAttempts: 8
+
+ingress:
+  host: "staging-misskey.usbharu.dev"
+
+backup:
+  bucketName: misskey-backup
+  cron: "0 3 * * 1"
+
+maintenance:
+  enable: false
+  misskeyReplica: 1
