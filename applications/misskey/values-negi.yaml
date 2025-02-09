@@ -3,7 +3,7 @@ misskey:
   port: 3000
   id: "aidx"
   proxy: "http://release-cloudflare-warp-proxy-service.proxy:40000"
-  image: misskey/misskey:2024.11.0
+  image: misskey/misskey:2025.1.0
   clusterLimit: 2
   deliverJobConcurrency: 128
   inboxJobConcurrency: 128
