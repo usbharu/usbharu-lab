@@ -1,0 +1,87 @@
+ix-1(config)# show startup-config
+Using 1411 out of 1048576 bytes
+
+! NEC Portable Internetwork Core Operating System Software
+! IX Series IX2215 (magellan-sec) Software, Version 10.10.29, RELEASE SOFTWARE
+! Compiled Jan 10-Fri-2025 12:37:01 JST #2
+! Last updated Mar 13-Thu-2025 13:54:28 JST
+!
+!
+!
+hostname ix-1
+timezone +09 00
+!
+username usbharu password hash 51A91Bd08C27f63d810Fad5Fb43e37@ administrator
+!
+!
+ip ufs-cache enable
+ip dhcp enable
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+http-server username usbharu
+!
+!
+!
+!
+ip dhcp profile ix-1-ipv4-dhcp
+  assignable-range 192.168.10.2 192.168.10.99
+  default-gateway 192.168.10.1
+  dns-server 192.168.10.1 192.168.1.1
+  domain-name ix-1.biwako.internal
+!
+device GigaEthernet0
+!
+device GigaEthernet1
+!
+device GigaEthernet2
+!
+device BRI0
+  isdn switch-type hsd128k
+!
+device USB0
+  shutdown
+!
+interface GigaEthernet0.0
+  ip address 192.168.10.1/24
+  ip dhcp binding ix-1-ipv4-dhcp
+  no shutdown
+!
+interface GigaEthernet1.0
+  no ip address
+  shutdown
+!
+interface GigaEthernet2.0
+  ip address 192.168.1.100/24
+  ip napt enable
+  ip napt service http 192.168.1.100 none tcp 80
+  http-server ip enable
+  no shutdown
+!
+interface BRI0.0
+  encapsulation ppp
+  no auto-connect
+  no ip address
+  shutdown
+!
+interface USB-Serial0.0
+  encapsulation ppp
+  no auto-connect
+  no ip address
+  shutdown
+!
+interface Loopback0.0
+  no ip address
+!
+interface Null0.0
+  no ip address
+!
+ix-1(config)# 
