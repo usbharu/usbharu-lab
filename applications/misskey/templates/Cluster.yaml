@@ -15,3 +15,20 @@ spec:
     initdb:
       database: misskey
       owner: misskey
+
+  managed:
+    services:
+      disabledDefaultServices: [ "ro", "r" ]
+      additional:
+        - selectorType: rw
+          serviceTemplate:
+            metadata:
+              name: "{{ .Release.Name }}-misskey-cluster-rw"
+            spec:
+              type: NodePort
+              ports:
+                - name: postgres
+                  port: 5432
+                  targetPort: 5432
+                  nodePort: 31000
+                  protocol: TCP
