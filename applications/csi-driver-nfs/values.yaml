@@ -1,3 +1,0 @@
-csi-driver-nfs:
-  storageClass:
-    create: true
