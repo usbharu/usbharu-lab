@@ -19,3 +19,7 @@ sudo helm upgrade --kubeconfig /etc/rancher/k3s/k3s.yaml -f argocd/values-local.
 ```
 
 を実行する
+
+その他のVMでinit-agent.shを編集してから実行する
+
+https://docs.k3s.io/ja/datastore/ha-embedded
