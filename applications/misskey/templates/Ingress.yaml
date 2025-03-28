@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-misskey
 spec:
-  ingressClassName: release-traefik
+  ingressClassName: cloudflare-tunnel
   rules:
     - host: {{ .Values.ingress.host }}
       http:
