@@ -23,7 +23,7 @@ spec:
         - selectorType: rw
           serviceTemplate:
             metadata:
-              name: "{{ .Release.Name }}-misskey-cluster-rw"
+              name: "{{ .Release.Name }}-misskey-cluster-rw-2"
             spec:
               type: NodePort
               ports:
