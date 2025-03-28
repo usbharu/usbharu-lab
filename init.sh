@@ -8,7 +8,7 @@ sudo apt-get install helm
 
 sudo apt install -yqq nfs-common daemonize dbus-user-session fontconfig
 
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" sh -s - --disable=traefik
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" sh -s - --disable=traefik --disable=servicelb --cluster-init
 
 sleep 5
 
