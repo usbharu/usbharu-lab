@@ -6,7 +6,7 @@ metadata:
     argocd.argoproj.io/sync-options: Delete=false
 spec:
   enableSuperuserAccess: true
-  instances: 3
+  instances: 1
   storage:
     size: 10Gi
   monitoring:
