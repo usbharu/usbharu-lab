@@ -38,7 +38,7 @@ http-server username usbharu
 !
 !
 ip dhcp profile ix-1-ipv4-dhcp
-  assignable-range 192.168.10.2 192.168.10.99
+  assignable-range 192.168.10.100 192.168.10.150
   default-gateway 192.168.10.1
   dns-server 192.168.10.1 192.168.1.1
   domain-name ix-1.biwako.internal
