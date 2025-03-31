@@ -22,5 +22,5 @@ backup:
   cron: "0 8 * * *"
 
 maintenance:
-  enable: true
+  enable: false
   misskeyReplica: 1
