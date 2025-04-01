@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pdc-agent
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.argocd.repositoryUrl }}
+    path: applications/pdc-agent
+    targetRevision: master
+    helm:
+      releaseName: release
+      version: v3
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pdc-agent
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
