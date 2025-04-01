@@ -23,6 +23,9 @@ secret:
     misskey:
       token: ""
       endpoint: ""
-
+  grafanaCloud:
+    cluster: ""
+    hostedGrafanaId: ""
+    token: ""
 monitoring:
   webhookUrl: ""
