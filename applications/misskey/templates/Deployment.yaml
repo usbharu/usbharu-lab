@@ -14,6 +14,19 @@ spec:
       labels:
         app: {{ .Release.Name }}-misskey
     spec:
+      initContainers:
+        - name: {{ .Release.Name }}-db-migrate
+          image: {{ .Values.misskey.image }}
+          command: [ "pnpm", "run", "migrate" ]
+          env:
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-misskey-cluster-app
+                  key: password
+          volumeMounts:
+            - name: misskey-default-yaml-config
+              mountPath: /misskey/.config
       containers:
         - name: {{ .Release.Name }}-misskey-server-container
           image: {{ .Values.misskey.image }}
