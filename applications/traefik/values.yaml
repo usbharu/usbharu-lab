@@ -37,7 +37,3 @@ traefik:
             for: 5m
             labels:
               severity: critical
-  ingressRoute:
-    dashboard:
-      enabled: true
-      annotations:
