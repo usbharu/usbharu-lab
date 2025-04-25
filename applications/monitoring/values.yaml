@@ -12,6 +12,8 @@ service:
   externalPort: 80
 
 kube-prometheus-stack:
+  defaultRules:
+    create: true
   kubeControllerManager:
     enabled: false
   kubeScheduler:
