@@ -40,3 +40,4 @@ traefik:
   ingressRoute:
     dashboard:
       enabled: true
+      annotations:
