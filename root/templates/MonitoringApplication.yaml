@@ -10,7 +10,7 @@ spec:
     path: applications/monitoring
     targetRevision: master
     helm:
-      releaseName: release
+      releaseName: kube-prometheus-stack
       version: v3
       valueFiles:
         - values.yaml
