@@ -48,3 +48,11 @@ kube-prometheus-stack:
 #          webhook_configs:
             - webhook_url: "https://example.com"
               send_resolved: true
+  grafana:
+    sidecar:
+      dashboards:
+        annotations:
+          grafana_folder: "kubernetes"
+        folderAnnotation: "grafana_folder"
+        provider:
+          foldersFromFilesStructure: true
