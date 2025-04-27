@@ -56,7 +56,7 @@ kube-prometheus-stack:
         folderAnnotation: "grafana_folder"
         provider:
           foldersFromFilesStructure: true
-    additionalDatasources:
+    additionalDataSources:
       - access: proxy
         isDefault: false
         name: loki
