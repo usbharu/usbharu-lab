@@ -23,4 +23,4 @@ backup:
 
 maintenance:
   enable: false
-  misskeyReplica: 1
+  misskeyReplica: 2
