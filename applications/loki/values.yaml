@@ -1,3 +1,4 @@
-#loki-stack:
-#  grafana:
-#    enabled: false
+loki-stack:
+  loki:
+    url: http://kube-prometheus-stack-loki.monitoring.svc.cluster.local:3100
+    isDefault: false
