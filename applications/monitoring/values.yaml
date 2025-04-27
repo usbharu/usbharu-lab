@@ -3,11 +3,11 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: "selfsigning-issuer"
   hosts:
-  - "grafana.lab.usbharu.dev.internal"
-  tls:
-  - hosts:
     - "grafana.lab.usbharu.dev.internal"
-    secretName: grafana-selfsigning-cert
+  tls:
+    - hosts:
+        - "grafana.lab.usbharu.dev.internal"
+      secretName: grafana-selfsigning-cert
 service:
   externalPort: 80
 
@@ -45,7 +45,7 @@ kube-prometheus-stack:
       receivers:
         - name: "discord-webhook"
           discord_configs:
-#          webhook_configs:
+            #          webhook_configs:
             - webhook_url: "https://example.com"
               send_resolved: true
   grafana:
@@ -56,3 +56,11 @@ kube-prometheus-stack:
         folderAnnotation: "grafana_folder"
         provider:
           foldersFromFilesStructure: true
+    additionalDatasources:
+      - access: proxy
+        isDefault: false
+        name: loki
+        orgId: 1
+        type: loki
+        url: http://kube-prometheus-stack-loki.svc:3100
+        version: 1
