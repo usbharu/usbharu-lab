@@ -62,5 +62,5 @@ kube-prometheus-stack:
         name: loki
         orgId: 1
         type: loki
-        url: http://kube-prometheus-stack-loki.svc:3100
+        url: http://kube-prometheus-stack-loki.monitoring:3100/
         version: 1
