@@ -10,7 +10,7 @@ spec:
     path: applications/cloudflare-tunnel
     targetRevision: master
     helm:
-      releaseName: release
+      releaseName: cloudflare-tunnel
       version: v3
       valueFiles:
         - values.yaml
