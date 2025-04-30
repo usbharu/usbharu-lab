@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   name: argocd-ingress
   namespace: argocd
+  annotations:
+    "cloudflare-tunnel-ingress-controller.strrl.dev/backend-protocol": "https"
+    "cloudflare-tunnel-ingress-controller.strrl.dev/proxy-ssl-verify": "off"
 spec:
   ingressClassName: cloudflare-tunnel
   rules:
