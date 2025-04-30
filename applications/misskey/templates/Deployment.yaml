@@ -34,11 +34,11 @@ spec:
             - containerPort: 3000
           resources:
             requests:
-              cpu: "0.5"
-              memory: "2Gi"
+              cpu: {{ .Values.misskey.resources.requests.cpu }}
+              memory: {{ .Values.misskey.resources.requests.memory }}
             limits:
-              cpu: "1"
-              memory: "3Gi"
+              cpu: {{ .Values.misskey.resources.limits.cpu }}
+              memory: {{ .Values.misskey.resources.limits.memory }}
           command: [ "pnpm", "run", "migrateandstart" ]
           env:
             - name: DATABASE_PASSWORD

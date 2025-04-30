@@ -13,6 +13,13 @@ misskey:
   relationshipJobPerSec: 64
   deliverJobMaxAttempts: 12
   inboxJobMaxAttempts: 8
+  resources:
+    limits:
+      cpu: "1"
+      memory: "3Gi"
+    requests:
+      cpu: "0.5"
+      memory: "2Gi"
 
 ingress:
   host: "misskey.usbharu.dev"
@@ -24,3 +31,19 @@ backup:
 maintenance:
   enable: false
   misskeyReplica: 2
+redis:
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: "500Mi"
+    requests:
+      cpu: "0.25"
+      memory: "100Mi"
+db:
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: "4Gi"
+    requests:
+      cpu: "0.25"
+      memory: "3Gi"

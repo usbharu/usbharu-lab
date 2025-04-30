@@ -13,7 +13,13 @@ misskey:
   relationshipJobPerSec: 128
   deliverJobMaxAttempts: 12
   inboxJobMaxAttempts: 8
-
+  resources:
+    limits:
+      cpu: "1"
+      memory: "3Gi"
+    requests:
+      cpu: "0.5"
+      memory: "2Gi"
 ingress:
   host: "negi.usbharu.dev"
 
@@ -24,3 +30,19 @@ backup:
 maintenance:
   enable: false
   misskeyReplica: 2
+redis:
+  resources:
+    limits:
+      cpu: "0.25"
+      memory: "200Mi"
+    requests:
+      cpu: "0.25"
+      memory: "100Mi"
+db:
+  resources:
+    limits:
+      cpu: "0.5"
+      memory: "3Gi"
+    requests:
+      cpu: "0.25"
+      memory: "2Gi"

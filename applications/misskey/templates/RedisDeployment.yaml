@@ -23,11 +23,11 @@ spec:
               name: redis-volume
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "0.5"
+              memory: {{ .Values.redis.resources.limits.memory }}
+              cpu: {{ .Values.redis.resources.limits.cpu }}
             requests:
-              memory: "500Mi"
-              cpu: "0.2"
+              memory: {{ .Values.redis.resources.requests.memory }}
+              cpu: {{ .Values.redis.resources.requests.cpu }}
           ports:
             - containerPort: 6379
       restartPolicy: Always
