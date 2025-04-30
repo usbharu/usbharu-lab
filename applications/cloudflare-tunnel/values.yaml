@@ -5,3 +5,6 @@ cloudflare-tunnel-ingress-controller:
       accountIDKey: accountId
       tunnelNameKey: tunnelName
       apiTokenKey: apiToken
+  cloudflaredServiceMonitor:
+    create: true
+  replicaCount: 3
