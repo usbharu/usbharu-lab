@@ -49,6 +49,12 @@ kube-prometheus-stack:
             - webhook_url: "https://example.com"
               send_resolved: true
   grafana:
+    adminPassword: ""
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.usbharu.dev
+      ingressClassName: cloudflare-tunnel
     sidecar:
       dashboards:
         annotations:
