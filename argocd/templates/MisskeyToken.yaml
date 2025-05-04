@@ -11,7 +11,7 @@ metadata:
 type: Opaque
 stringData:
   staging_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.staging }}"
-  usbharu_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.usbharu }}"
+  release_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.usbharu }}"
   negi_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.negi }}"
 
 
