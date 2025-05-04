@@ -5,8 +5,7 @@ metadata:
 spec:
   endpoints:
     - path: /metrics
-      targetPort: "8080"
-      scheme: http
+      port: 8080
   namespaceSelector:
     matchNames:
       - misskey
