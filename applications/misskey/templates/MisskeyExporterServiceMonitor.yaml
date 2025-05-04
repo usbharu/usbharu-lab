@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}-misskey-exporter-service-monitor
 spec:
   endpoints:
-    - port: "8080"
+    - port: "metrics"
       path: /metrics
   namespaceSelector:
     matchNames:
