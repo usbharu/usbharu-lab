@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: misskey
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: MisskeyToken
+  namespace: misskey
+type: Opaque
+stringData:
+  staging_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.staging }}"
+  usbharu_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.usbharu }}"
+  negi_MISSKEY_API_TOKEN: "{{ .Values.secret.misskey.negi }}"
+
+
+#WARNING: You should not place the username and password in the version control repository or anywhere else in plain text.
+#Instead, use the Services Tool Window -> Kubernetes -> <Desired Cluster> -> Configuration -> <right-click on Secrets> -> Create New Secret...

@@ -5,6 +5,10 @@ certManager:
   namespace: "cert-manager"
 
 secret:
+  misskey:
+    staging: ""
+    usbharu: ""
+    negi: ""
   cloudflare:
     accountId: ""
     tunnel:

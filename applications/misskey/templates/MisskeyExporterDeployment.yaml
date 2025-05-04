@@ -23,5 +23,10 @@ spec:
           env:
             - name: MISSKEY_ENDPOINT
               value: {{ .Release.Name }}-misskey-service:3000
+            - name: MISSKEY_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: "{{ .Release.Name }}_MISSKEY_API_TOKEN"
+                  name: MisskeyToken
       restartPolicy: Always
       
