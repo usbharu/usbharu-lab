@@ -20,5 +20,8 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: MISSKEY_ENDPOINT
+              value: {{ .Release.Name }}-misskey-service:3000
       restartPolicy: Always
       
