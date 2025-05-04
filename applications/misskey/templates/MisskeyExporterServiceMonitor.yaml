@@ -5,7 +5,7 @@ metadata:
 spec:
   endpoints:
     - path: /metrics
-      targetPort: metrics
+      targetPort: "8080"
       scheme: http
   namespaceSelector:
     matchNames:
