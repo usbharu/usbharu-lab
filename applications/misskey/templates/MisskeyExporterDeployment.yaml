@@ -27,6 +27,6 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: "{{ .Release.Name }}_MISSKEY_API_TOKEN"
-                  name: MisskeyToken
+                  name: misskey-token
       restartPolicy: Always
       
