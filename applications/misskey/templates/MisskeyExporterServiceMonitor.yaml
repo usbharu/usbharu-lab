@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-misskey-exporter-service-monitor
+spec:
+  endpoints:
+    - path: /metrics
+      targetPort: metrics
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - misskey
+  selector:
+    matchLabels:
+      usbharu.dev/misskey-service: {{ .Release.Name }}-misskey-service
