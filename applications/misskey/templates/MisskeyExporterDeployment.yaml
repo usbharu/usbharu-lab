@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-misskey-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-misskey-exporter
+  template:
+    metadata:
+      name: {{ .Release.Name }}-misskey-exporter
+      labels:
+        app: {{ .Release.Name }}-misskey-exporter
+    spec:
+      containers:
+        - name: title
+          image: git.usbharu.dev/usbharu/misskey-exporter:v0.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      restartPolicy: Always
+      
