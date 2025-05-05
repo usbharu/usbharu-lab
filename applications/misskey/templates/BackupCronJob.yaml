@@ -19,7 +19,7 @@ spec:
 
               env:
                 - name: PG_HOST
-                  value: {{ .Release.Name }}-misskey-cluster-ro
+                  value: {{ .Release.Name }}-misskey-cluster-rw
                 - name: PG_PORT
                   value: "5432"
                 - name: PG_USER
