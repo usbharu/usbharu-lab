@@ -78,8 +78,8 @@ spec:
                 - '{}'
                 - http://localhost:3000/api/ping
           startupProbe:
-            failureThreshold: 3000
-            periodSeconds: 10
+            failureThreshold: 30
+            periodSeconds: 1000
             exec:
               command:
                 - curl
