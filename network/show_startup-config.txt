@@ -37,10 +37,16 @@ http-server username usbharu
 !
 !
 !
-ip dhcp profile ix-1-ipv4-dhcp
+ip dhcp profile ix-1-ipv4-dhcp-1
   assignable-range 192.168.10.100 192.168.10.150
   default-gateway 192.168.10.1
   dns-server 192.168.10.1 192.168.1.1
+  domain-name ix-1.biwako.internal
+!
+ip dhcp profile ix-1-ipv4-dhcp-2
+  assignable-range 192.168.2.2 192.168.2.50
+  default-gateway 192.168.2.1
+  dns-server 192.168.2.1 192.168.1.1
   domain-name ix-1.biwako.internal
 !
 device GigaEthernet0
@@ -57,12 +63,13 @@ device USB0
 !
 interface GigaEthernet0.0
   ip address 192.168.10.1/24
-  ip dhcp binding ix-1-ipv4-dhcp
+  ip dhcp binding ix-1-ipv4-dhcp-1
   no shutdown
 !
 interface GigaEthernet1.0
-  no ip address
-  shutdown
+  ip address 192.168.2.1/24
+  ip dhcp binding ix-1-ipv4-dhcp-2
+  no shutdown
 !
 interface GigaEthernet2.0
   ip address 192.168.1.100/24
