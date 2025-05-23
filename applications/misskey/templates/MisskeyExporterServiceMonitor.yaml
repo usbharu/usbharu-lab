@@ -6,6 +6,11 @@ spec:
   endpoints:
     - port: "metrics"
       path: /metrics
+      relabelings:
+      - sourceLabels: []
+        targetLabel: misskey_instance
+        replacement: {{ .Release.Name }}
+        action: replace
   namespaceSelector:
     matchNames:
       - misskey
