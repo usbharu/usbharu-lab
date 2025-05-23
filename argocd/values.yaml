@@ -33,3 +33,4 @@ secret:
     token: ""
 monitoring:
   webhookUrl: ""
+  grafanaPassword: ""

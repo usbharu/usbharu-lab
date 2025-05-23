@@ -19,6 +19,8 @@ spec:
         value: {{ .Values.argocd.repositoryUrl }}
       - name: monitoring.webhookUrl
         value: {{ .Values.monitoring.webhookUrl }}
+      - name: monitoring.grafanaPassword
+        value: {{ .Values.monitoring.grafanaPassword }}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
