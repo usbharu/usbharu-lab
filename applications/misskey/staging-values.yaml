@@ -4,7 +4,7 @@ misskey:
   id: "aidx"
   proxy: "http://127.0.0.1:40000"
   image: misskey/misskey:2025.4.0
-  clusterLimit: 2
+  clusterLimit: 1
   deliverJobConcurrency: 128
   inboxJobConcurrency: 64
   relationshipJobConcurrency: 16
