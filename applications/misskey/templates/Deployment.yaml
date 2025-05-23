@@ -78,7 +78,7 @@ spec:
                 - '{}'
                 - http://localhost:3000/api/ping
           startupProbe:
-            failureThreshold: 30
+            failureThreshold: 3000
             periodSeconds: 10
             exec:
               command:
