@@ -33,11 +33,11 @@ spec:
       max_wal_size: "8GB"
   resources:
     requests:
-      memory: "1Gi"
-      cpu: "200m"
+      memory: {{ .Values.db.resources.requests.memory }}
+      cpu: {{ .Values.db.resources.requests.cpu }}
     limits:
-      memory: "4Gi"
-      cpu: "1"
+      memory: {{ .Values.db.resources.limits.memory }}
+      cpu: {{ .Values.db.resources.limits.cpu }}
   managed:
     services:
 {{/*      disabledDefaultServices: [ "ro", "r" ]*/}}
