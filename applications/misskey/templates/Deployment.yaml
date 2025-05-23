@@ -50,7 +50,6 @@ spec:
             - name: misskey-default-yaml-config
               mountPath: /misskey/.config
           livenessProbe:
-            initialDelaySeconds: 30
             periodSeconds: 10
             exec:
               command:
@@ -65,7 +64,6 @@ spec:
                 - '{}'
                 - http://localhost:3000/api/ping
           readinessProbe:
-            initialDelaySeconds: 30
             periodSeconds: 10
             exec:
               command:
@@ -80,7 +78,6 @@ spec:
                 - '{}'
                 - http://localhost:3000/api/ping
           startupProbe:
-            initialDelaySeconds: 10
             failureThreshold: 30
             periodSeconds: 10
             exec:
