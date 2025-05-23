@@ -112,7 +112,7 @@ data:
               "expr": "misskey_meta",
               "fullMetaSearch": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{ "{{version}}" }}",
+              "legendFormat": "{{ `{{version}}` }}",
               "range": true,
               "refId": "A",
               "useBackend": false,
@@ -739,7 +739,7 @@ data:
               "includeNullMetadata": false,
               "instant": false,
               "interval": "",
-              "legendFormat": "{{api}} {{type}}",
+              "legendFormat": "{{`{{api}} {{type}}`}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -859,7 +859,7 @@ data:
               "hide": false,
               "includeNullMetadata": false,
               "instant": false,
-              "legendFormat": "{{api}} {{type}}",
+              "legendFormat": "{{`{{api}} {{type}}`}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -930,7 +930,7 @@ data:
               "expr": "sum by(status) (misskey_jobqueue_jobs{type=\"deliver\", misskey_instance=\"$misskey_instance\"})",
               "fullMetaSearch": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{type}} {{status}}",
+              "legendFormat": "{{`{{type}} {{status}}`}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -1001,7 +1001,7 @@ data:
               "expr": "sum by(status) (misskey_jobqueue_jobs{type=\"inbox\", misskey_instance=\"$misskey_instance\"})",
               "fullMetaSearch": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{type}} {{status}}",
+              "legendFormat": "{{`{{type}} {{status}}`}}",
               "range": true,
               "refId": "A",
               "useBackend": false
@@ -1106,7 +1106,7 @@ data:
               "fullMetaSearch": false,
               "includeNullMetadata": true,
               "interval": "1",
-              "legendFormat": "{{type}} {{status}}",
+              "legendFormat": "{{`{{type}} {{status}}`}}",
               "range": true,
               "refId": "A",
               "useBackend": false
