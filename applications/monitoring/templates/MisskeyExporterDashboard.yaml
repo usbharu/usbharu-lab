@@ -112,7 +112,7 @@ data:
               "expr": "misskey_meta",
               "fullMetaSearch": false,
               "includeNullMetadata": true,
-              "legendFormat": "{{version}}",
+              "legendFormat": "{{ "{{version}}" }}",
               "range": true,
               "refId": "A",
               "useBackend": false,
