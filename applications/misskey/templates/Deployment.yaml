@@ -79,6 +79,22 @@ spec:
                 - -d
                 - '{}'
                 - http://localhost:3000/api/ping
+          startupProbe:
+            initialDelaySeconds: 10
+            failureThreshold: 30
+            periodSeconds: 10
+            exec:
+              command:
+                - curl
+                - -X
+                - POST
+                - -f
+                - -k
+                - -H
+                - "Content-Type: application/json"
+                - -d
+                - '{}'
+                - http://localhost:3000/api/ping
       volumes:
         - name: misskey-default-yaml-config
           configMap:
