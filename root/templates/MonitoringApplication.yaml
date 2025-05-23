@@ -17,6 +17,8 @@ spec:
       parameters:
         - name: kube-prometheus-stack.alertmanager.config.receivers[0].discord_configs[0].webhook_url
           value: {{ .Values.monitoring.webhookUrl }}
+        - name: kube-prometheus-stack.grafana.adminPassword
+          value: {{ .Values.monitoring.grafanaPassword }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ .Values.monitoring.namespace }}
