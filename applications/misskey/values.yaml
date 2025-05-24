@@ -29,7 +29,7 @@ backup:
   cron: "0 3 * * *"
 
 maintenance:
-  enable: true
+  enable: false
   misskeyReplica: 2
 redis:
   resources:
