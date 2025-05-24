@@ -30,7 +30,7 @@ backup:
 
 maintenance:
   enable: true
-  misskeyReplica: 0
+  misskeyReplica: 2
 redis:
   resources:
     limits:
