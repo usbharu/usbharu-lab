@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: title
-          image: git.usbharu.dev/usbharu/misskey-exporter:v0.2.0
+          image: git.usbharu.dev/usbharu/misskey-exporter:v0.2.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
