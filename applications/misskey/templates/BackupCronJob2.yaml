@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-backup-cron-job-2
+spec:
+  timeZone: "Asia/Tokyo"
+  schedule: {{ .Values.backup.cron }} #毎朝三時
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: {{ .Release.Name }}-backup-cron-job-2
+              image: git.usbharu.dev/usbharu/pg_backup_job:a483280
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: backup-cron-job-secret
+
+              env:
+                - name: PG_HOST
+                  value: {{ .Release.Name }}-misskey-cluster-ro
+                - name: PG_PORT
+                  value: "5432"
+                - name: PG_USER
+                  value: misskey
+                - name: PG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Release.Name }}-misskey-cluster-app
+                      key: password
+                - name: PG_DATABASE
+                  value: misskey
+                - name: S3_BUCKET
+                  value: {{ .Values.backup.bucketName }}/{{ .Release.Name }}
+
+          restartPolicy: OnFailure
