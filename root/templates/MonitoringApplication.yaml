@@ -15,7 +15,7 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
-        - name: kube-prometheus-stack.alertmanager.config.receivers[1].slack_configs[0].webhook_url
+        - name: kube-prometheus-stack.alertmanager.config.receivers[0].slack_configs[0].api_url
           value: {{ .Values.monitoring.webhookUrl }}
         - name: kube-prometheus-stack.grafana.adminPassword
           value: {{ .Values.monitoring.grafanaPassword }}

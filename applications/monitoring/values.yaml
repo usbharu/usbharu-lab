@@ -44,11 +44,11 @@ kube-prometheus-stack:
         routes:
           - receiver: "slack"
       receivers:
-        - name: "discord-webhook"
-          discord_configs:
-            #          webhook_configs:
-            - webhook_url: "https://example.com"
-              send_resolved: true
+#        - name: "discord-webhook"
+#          discord_configs:
+#            #          webhook_configs:
+#            - webhook_url: "https://example.com"
+#              send_resolved: true
         - name: "slack"
           slack_configs:
             - api_url: "https://example.com"
