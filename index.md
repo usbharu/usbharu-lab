@@ -6,6 +6,18 @@
 
 [pve/index.md](pve/index.md)を実行する
 
+## HA構成への準備
+
+lb用の小さなVMを作成する
+
+両方で下記のコマンドを実行する
+
+```bash
+apt install -y vim haproxy keepalived
+```
+
+
+
 ## クラスタの立ち上げ
 
 3つVMを立ち上げ、そのうち1つで作業を始める

@@ -11,4 +11,4 @@ sudo apt install -yqq nfs-common daemonize dbus-user-session fontconfig
 
 exit 1
 # edit
-#curl -sfL https://get.k3s.io | K3S_TOKEN=SECRET sh -s - server --server https://{server-ip}:6443 --disable=traefik --disable=servicelb --disable=local-storage
+#curl -sfL https://get.k3s.io | K3S_TOKEN=SECRET sh -s - server --server https://192.168.10.15:6443 --tls-san=192.168.10.15 --disable=traefik --disable=servicelb --disable=local-storage
