@@ -39,15 +39,22 @@ kube-prometheus-stack:
     enabled: true
     config:
       route:
-        receiver: "discord-webhook"
+        receiver: "slack"
+        group_by: ['alertname', 'cluster']
         routes:
-          - receiver: "discord-webhook"
+          - receiver: "slack"
       receivers:
         - name: "discord-webhook"
           discord_configs:
             #          webhook_configs:
             - webhook_url: "https://example.com"
               send_resolved: true
+        - name: "slack"
+          slack_configs:
+            - api_url: "https://example.com"
+              send_resolved: true
+
+
   grafana:
     adminPassword: ""
     ingress:
