@@ -106,9 +106,9 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
+          "editorMode": "builder",
           "exemplar": false,
-          "expr": "sum by(job, version) (misskey_meta{misskey_instance=\"misskey.usbharu.dev\"})",
+          "expr": "sum by(job, version) (misskey_meta{misskey_instance=\"$misskey_instance\"})",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -1160,6 +1160,6 @@
   "timezone": "browser",
   "title": "Misskey",
   "uid": "eej5avfu4yyo0f",
-  "version": 50,
+  "version": 51,
   "weekStart": ""
 }
