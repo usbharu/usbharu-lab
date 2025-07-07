@@ -92,8 +92,7 @@
             "lastNotNull"
           ],
           "fields": "",
-          "limit": 1,
-          "values": true
+          "values": false
         },
         "showPercentChange": false,
         "textMode": "name",
@@ -109,13 +108,13 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "misskey_meta",
+          "expr": "sum by(job, version) (misskey_meta{misskey_instance=\"misskey.usbharu.dev\"})",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{version}}",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -188,13 +187,13 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "avg_over_time((misskey_ping_response_code{misskey_instance=\"$misskey_instance\"} == bool 200)[30d:]) * 100",
+          "expr": "avg_over_time(sum by(job) (misskey_ping_response_code{misskey_instance=\"$misskey_instance\"} == bool 200)[30d:]) * 100",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -257,7 +256,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "misskey_online_users{misskey_instance=\"$misskey_instance\"}",
+          "expr": "sum by(job) (misskey_online_users{misskey_instance=\"$misskey_instance\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -520,14 +519,14 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
-          "editorMode": "code",
+          "editorMode": "builder",
           "exemplar": false,
-          "expr": "misskey_ping_response_code{misskey_instance=\"$misskey_instance\"} == bool 200",
+          "expr": "sum by(job) (misskey_ping_response_code{misskey_instance=\"$misskey_instance\"}) == bool 200",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -614,7 +613,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "up{misskey_instance=\"$misskey_instance\"}",
+          "expr": "sum by(job) (up{misskey_instance=\"$misskey_instance\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -855,7 +854,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "misskey_api_response_time_raw{misskey_instance=\"$misskey_instance\"}",
+          "expr": "sum by(job, api, type) (misskey_api_response_time_raw{misskey_instance=\"$misskey_instance\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -1161,6 +1160,6 @@
   "timezone": "browser",
   "title": "Misskey",
   "uid": "eej5avfu4yyo0f",
-  "version": 44,
+  "version": 50,
   "weekStart": ""
 }
