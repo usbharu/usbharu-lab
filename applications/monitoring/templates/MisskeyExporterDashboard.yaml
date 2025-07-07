@@ -5,6 +5,7 @@ metadata:
   labels:
     grafana_dashboard: '1'
 data:
+{{ (.Files.Glob "files/*.json").AsConfig | indent 2 }}
   misskey-exporter.json: |-
     {
       "__inputs": [
