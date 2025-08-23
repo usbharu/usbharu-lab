@@ -1,5 +1,9 @@
 tenant:
   tenant:
+    image:
+      repository: quay.io/minio/minio
+      tag: RELEASE.2025-04-08T15-41-24Z-cpuv1
+      pullPolicy: IfNotPresent
     pools:
       - servers: 4
         name: pool-1
