@@ -23,7 +23,7 @@ version: 0.1.0
 # It is recommended to use it with quotes.
 appVersion: "1.16.0"
 dependencies:
-  - name: minio-operator
+  - name: operator
     version: 4.3.7
     repository: https://operator.min.io/
   - name: tenant
