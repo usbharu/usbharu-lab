@@ -24,7 +24,7 @@ version: 0.1.0
 appVersion: "1.16.0"
 dependencies:
   - name: minio-operator
-    version: 7.1.1
+    version: 4.3.7
     repository: https://operator.min.io/
   - name: tenant
     version: 7.1.1
