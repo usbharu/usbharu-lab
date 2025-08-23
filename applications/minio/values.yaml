@@ -1,4 +1,4 @@
 tenant:
   tenant:
     pools:
-      storageClassName: nfs-csi-fast
+      - storageClassName: nfs-csi-fast
