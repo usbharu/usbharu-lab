@@ -1,4 +1,26 @@
 tenant:
   tenant:
     pools:
-      - storageClassName: nfs-csi-fast
+      - servers: 4
+        name: pool-1
+        volumesPerServer: 4
+        size: 10Gi
+        storageClassName: nfs-csi-fast
+        storageAnnotations: { }
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+          fsGroupChangePolicy: "OnRootMismatch"
+          runAsNonRoot: true
+        containerSecurityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        topologySpreadConstraints: [ ]
