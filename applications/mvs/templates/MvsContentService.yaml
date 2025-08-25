@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mvs-content-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-mvs-content
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: api
+  type: NodePort
+  

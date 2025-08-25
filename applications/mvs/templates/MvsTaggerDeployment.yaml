@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-tagger
+  labels:
+    app: {{ .Release.Name }}-mvs-tagger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-tagger
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-tagger
+      labels:
+        app: {{ .Release.Name }}-mvs-tagger
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-mvs-tagger
+          image: ghcr.io/usbharu/mvs-tagger
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+              name: api
+      restartPolicy: Always
+      
