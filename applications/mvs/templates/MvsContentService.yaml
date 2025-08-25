@@ -8,6 +8,7 @@ spec:
   ports:
     - protocol: TCP
       port: 8080
+      targetPort: api
       name: api
   type: NodePort
   
