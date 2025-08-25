@@ -1,14 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-mongodb-service
+  name: {{ .Release.Name }}-mongo-svc
+  labels:
+    app: {{ .Release.Name }}-mongo
 spec:
-  selector:
-    app.kubernetes.io/instance: {{ .Release.Name }}-mongodb
   ports:
-    - protocol: TCP
-      port: 27017
-      targetPort: 27017
-      name: mongodb
-  type: NodePort
-  
+    - port: 27017
+      name: mongo
+  # Podに直接アクセスするための定義。Service自体にIPを持たせない。
+  clusterIP: None
+  selector:
+    app: {{ .Release.Name }}-mongo
+
+---
