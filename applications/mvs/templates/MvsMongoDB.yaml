@@ -20,6 +20,7 @@ spec:
       roles:
         - name: "readWriteAnyDatabase"
           db: "admin"
+      scramCredentialsSecretName: {{ .Release.Name }}-scram
   # データを永続化するための設定（推奨）
   statefulSet:
     spec:
