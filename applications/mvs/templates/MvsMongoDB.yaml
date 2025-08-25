@@ -27,6 +27,9 @@ spec:
   # データを永続化するための設定（推奨）
   statefulSet:
     spec:
+      securityContext:
+        runAsUser: 2000   # (推奨) 実行ユーザーを明示的に指定
+        fsGroup: 2000
       volumeClaimTemplates:
         - metadata:
             name: data-volume
