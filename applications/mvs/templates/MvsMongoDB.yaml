@@ -6,7 +6,10 @@ spec:
   members: 3              # シングルインスタンス
   type: ReplicaSet
   version: "8.0.12"         # バージョンを指定
-
+  replicaSetHorizons:
+    - horizon: {{ .Release.Name }}-mongodb-0.com:27017
+    - horizon: {{ .Release.Name }}-mongodb-1.com:27017
+    - horizon: {{ .Release.Name }}-mongodb-2.com:27017
   security:
     authentication:
       modes: [ "SCRAM" ]
