@@ -2,7 +2,6 @@ apiVersion: mongodbcommunity.mongodb.com/v1
 kind: MongoDBCommunity
 metadata:
   name: {{ .Release.Name }}-mongodb  # MongoDBクラスタの名前
-  namespace: mongodb        # OperatorがいるNamespace
 spec:
   members: 1                # シングルインスタンス
   type: ReplicaSet
