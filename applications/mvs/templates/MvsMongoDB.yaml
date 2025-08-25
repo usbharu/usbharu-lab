@@ -1,0 +1,22 @@
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: {{ .Release.Name }}-mongodb  # MongoDBクラスタの名前
+  namespace: mongodb        # OperatorがいるNamespace
+spec:
+  members: 1                # シングルインスタンス
+  type: ReplicaSet
+  version: "8.0.12"         # バージョンを指定
+
+  # データを永続化するための設定（推奨）
+  statefulSet:
+    spec:
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            storageClassName: nfs-csi-fast
+            resources:
+              requests:
+                storage: 2Gi # ストレージサイズ
+            accessModes: [ "ReadWriteOnce" ]

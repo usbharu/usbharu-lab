@@ -23,5 +23,8 @@ spec:
             - containerPort: 8081
               protocol: TCP
               name: api
+          env:
+            - name: SPRING_DATA_MONGODB_HOST
+              value: {{ .Release.Name }}-mongodb-sercice
       restartPolicy: Always
       
