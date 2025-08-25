@@ -3,7 +3,7 @@ kind: MongoDBCommunity
 metadata:
   name: {{ .Release.Name }}-mongodb  # MongoDBクラスタの名前
 spec:
-  members: 1                # シングルインスタンス
+  members: 3              # シングルインスタンス
   type: ReplicaSet
   version: "8.0.12"         # バージョンを指定
 
