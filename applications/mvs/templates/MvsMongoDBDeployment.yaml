@@ -1,19 +1,3 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-mongo-svc
-  labels:
-    app: {{ .Release.Name }}-mongo
-spec:
-  ports:
-    - port: 27017
-      name: mongo
-  # Podに直接アクセスするための定義。Service自体にIPを持たせない。
-  clusterIP: None
-  selector:
-    app: {{ .Release.Name }}-mongo
-
----
 # --- StatefulSet for a Single MongoDB Instance ---
 apiVersion: apps/v1
 kind: StatefulSet

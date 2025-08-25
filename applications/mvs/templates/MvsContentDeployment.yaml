@@ -25,6 +25,6 @@ spec:
               name: api
           env:
             - name: SPRING_DATA_MONGODB_HOST
-              value: {{ .Release.Name }}-mongodb-svc
+              value: {{ .Release.Name }}-mongo-svc
       restartPolicy: Always
       
