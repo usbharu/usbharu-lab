@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mvs-content
-          image: ghcr.io/usbharu/mvs-content
+          image: ghcr.io/usbharu/mvs-content:b973f66
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
