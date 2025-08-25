@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-content
+  labels:
+    app: {{ .Release.Name }}-mvs-content
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-content
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-content
+      labels:
+        app: {{ .Release.Name }}-mvs-content
+    spec:
+      containers:
+        - name: mvs-content
+          image: ghcr.io/usbharu/mvs-content
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+              name: api
+      restartPolicy: Always
+      
