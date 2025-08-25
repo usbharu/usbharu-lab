@@ -15,7 +15,8 @@ spec:
   users:
     - name: "myuser"               # ▼▼ ユーザー名をここに直書き ▼▼
       db: "admin"
-      password: "mypassword123"     # ▼▼ パスワードをここに直書き ▼▼
+      passwordSecretRef:
+        name: {{ .Release.Name }}-mongodb-secret
       roles:
         - name: "readWriteAnyDatabase"
           db: "admin"
@@ -31,3 +32,11 @@ spec:
               requests:
                 storage: 2Gi # ストレージサイズ
             accessModes: [ "ReadWriteOnce" ]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-mongodb-secret
+type: Opaque
+stringData:
+  password: "password"
