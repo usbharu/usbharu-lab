@@ -19,10 +19,7 @@ spec:
         - name: {{ .Release.Name }}-mvs-tagger
           image: ghcr.io/usbharu/mvs-tagger
           imagePullPolicy: IfNotPresent
-          command:
-            - python
-            - -c
-            - "print(\"hello world\")"
+          command: ["/bin/sh", "-c", "sleep 3600"]
           ports:
             - containerPort: 8000
               protocol: TCP
