@@ -7,6 +7,18 @@ spec:
   type: ReplicaSet
   version: "8.0.12"         # バージョンを指定
 
+  security:
+    authentication:
+      modes: [ "SCRAM" ]
+
+  # ユーザー情報を直接定義
+  users:
+    - name: "myuser"               # ▼▼ ユーザー名をここに直書き ▼▼
+      db: "admin"
+      password: "mypassword123"     # ▼▼ パスワードをここに直書き ▼▼
+      roles:
+        - name: "readWriteAnyDatabase"
+          db: "admin"
   # データを永続化するための設定（推奨）
   statefulSet:
     spec:
