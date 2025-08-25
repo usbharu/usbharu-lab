@@ -35,3 +35,19 @@ sudo helm upgrade --kubeconfig /etc/rancher/k3s/k3s.yaml -f argocd/values-local.
 その他のVMでinit-agent.shを編集してから実行する
 
 https://docs.k3s.io/ja/datastore/ha-embedded
+
+## クラスタのメンテナンス
+
+### Podの退避
+
+退避
+
+```bash
+kubectl drain ${node-name}
+```
+
+復帰
+
+```bash
+kubectl uncordon ${node-name}
+```
