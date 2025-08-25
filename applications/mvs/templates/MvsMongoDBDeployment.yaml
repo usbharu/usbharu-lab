@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mongo-svc
+  labels:
+    app: {{ .Release.Name }}-mongo
+spec:
+  ports:
+    - port: 27017
+      name: mongo
+  # Podに直接アクセスするための定義。Service自体にIPを持たせない。
+  clusterIP: None
+  selector:
+    app: {{ .Release.Name }}-mongo
+
+---
+# --- StatefulSet for a Single MongoDB Instance ---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-mongo
+spec:
+  # このService名とStatefulSetのPodを紐付ける
+  serviceName: "mongo-svc"
+  replicas: 1 # ★シングルインスタンスなので1に設定
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mongo
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-mongo
+    spec:
+      # Podが終了する際の猶予期間
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongod
+          image: mongo:latest
+          command:
+            - "mongod"
+            - "--bind_ip_all" # Pod外からの接続を許可
+          ports:
+            - containerPort: 27017
+              name: mongo
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "root"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "password"
+          volumeMounts:
+            - name: mongo-persistent-storage
+              mountPath: /data/db
+
+  # --- Persistent Volume Claim Template ---
+  # Podが作成される際に、このテンプレートから自動でPVCを作成する
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-mongo-persistent-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "nfs-csi-fast"
+        resources:
+          requests:
+            storage: 10Gi # 必要なストレージサイズ
