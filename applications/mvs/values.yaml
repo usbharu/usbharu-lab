@@ -14,7 +14,8 @@ neo4j:
   # データの永続化設定
   volumes:
     data:
-      mode: "nfs-csi-fast"
-      defaultStorageClass:
+      mode: dynamic
+      dynamic:
+        storageClassName: nfs-csi-fast
         requests:
-          storage: "10Gi"
+          storage: 10Gi
