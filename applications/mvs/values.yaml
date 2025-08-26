@@ -1,0 +1,18 @@
+minio:
+  # MinIOの認証情報
+  rootUser: minio
+  rootPassword: minioadmin
+
+  # 永続化設定
+  persistence:
+    size: 10Gi
+
+  # 起動時に作成するバケットの設定
+  defaultBuckets:
+    - name: media    # 1つ目のバケット（公開）
+      policy: download      # 誰でもダウンロード可能
+      purge: false          # Helm削除時にデータを保持
+
+    - name: tmp-media # 2つ目のバケット（非公開）
+      policy: none          # アクセスポリシーなし（プライベート）
+      purge: false
