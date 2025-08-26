@@ -46,9 +46,9 @@ spec:
                   - "-c"
                   - >
                     until mc alias set myminio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do echo '...waiting...' && sleep 1; done;
-                    mc mb myminio/media;
+                    mc ls myminio/media >/dev/null 2>&1 || mc mb myminio/media;
                     mc policy set download myminio/media;
-                    mc mb myminio/tmp-media
+                    mc ls myminio/tmp-media >/dev/null 2>&1 || mc mb myminio/tmp-media;
       volumes:
         - name: storage
           persistentVolumeClaim:
