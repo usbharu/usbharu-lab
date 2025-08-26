@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mvs-content
-          image: ghcr.io/usbharu/mvs-content:b973f66
+          image: ghcr.io/usbharu/mvs-content:v0.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
@@ -26,5 +26,7 @@ spec:
           env:
             - name: SPRING_DATA_MONGODB_HOST
               value: {{ .Release.Name }}-mongo-svc
+            - name: APPLICATION_URL_CONTENT_SCAN
+              value: {{ .Release.Name }}-mvs-content-scan-service
       restartPolicy: Always
       

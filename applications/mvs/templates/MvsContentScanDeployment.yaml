@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: {{ .Release.Name }}-mvs-content-scan
-          image: ghcr.io/usbharu/mvs-content-scan
+          image: ghcr.io/usbharu/mvs-content-scan:v0.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8083

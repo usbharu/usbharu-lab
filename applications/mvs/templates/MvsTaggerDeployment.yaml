@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: {{ .Release.Name }}-mvs-tagger
-          image: ghcr.io/usbharu/mvs-tagger
+          image: ghcr.io/usbharu/mvs-tagger:v0.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
