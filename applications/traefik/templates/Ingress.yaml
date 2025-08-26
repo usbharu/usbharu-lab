@@ -1,0 +1,18 @@
+# test-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+spec:
+  ingressClassName: traefik # お使いのIngress Controller名に合わせてください
+  rules:
+    - host: "my-app.local" # このホスト名でアクセスします
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: echo-service # ステップ1で作成したService名
+                port:
+                  number: 80
