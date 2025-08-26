@@ -9,4 +9,6 @@ traefik:
     kind: DaemonSet
   logs:
     general:
-      level: DEBUG
+      level: INFO
+    access:
+      enabled: true
