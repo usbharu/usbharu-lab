@@ -19,9 +19,45 @@ spec:
         - name: {{ .Release.Name }}-minio
           image: quay.io/minio/minio
           imagePullPolicy: IfNotPresent
-          command: ["server", "/data", "--console-address", '":9001"']
+          args: [ "server", "/data", "--console-address", '":9001"' ]
+          env:
+            - name: MINIO_ROOT_USER
+              value: minio
+            - name: MINIO_ROOT_PASSWORD
+              value: minio123
           ports:
             - containerPort: 9000
               protocol: TCP
+              name: api
+            - containerPort: 9001 # Webコンソールポート
+              name: console
+          volumeMounts:
+            - name: storage
+              mountPath: /data # PVCを/dataにマウント
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - >
+                    until mc alias set myminio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do echo '...waiting...' && sleep 1; done;
+                    mc mb myminio/media;
+                    mc policy set download myminio/public-bucket;
+                    mc mb myminio/tmp-media
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-minio-pvc
       restartPolicy: Always
-      
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-minio-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce # 1つのノードから読み書き可能
+  resources:
+    requests:
+      storage: 10Gi # ストレージサイズ
