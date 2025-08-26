@@ -27,7 +27,13 @@ spec:
             - name: APPLICATION_S3_TMP_BUCKET
               value: tmp-media
             - name: APPLICATION_S3_ENDPOINT
-              value: http://{{ .Release.Name }}-minio:9000
+              value: http://{{ .Release.Name }}-minio-service:9000
+            - name: APPLICATION_S3_PUBLIC_URL
+              value: https://{{ .Release.Name }}-minio-mvs.usbharu.dev
+            - name: APPLICATION_S3_REGION
+              value: us-east-1
+            - name: APPLICATION_S3_SECRET
+              value: minio123
           ports:
             - containerPort: 8080
               protocol: TCP
