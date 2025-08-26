@@ -19,6 +19,7 @@ spec:
         - name: {{ .Release.Name }}-minio
           image: quay.io/minio/minio
           imagePullPolicy: IfNotPresent
+          command: ["server", "/data", "--console-address", '":9001"']
           ports:
             - containerPort: 9000
               protocol: TCP
