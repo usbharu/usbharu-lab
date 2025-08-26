@@ -26,5 +26,7 @@ spec:
           env:
             - name: SERVER_TOMCAT_RELAXED_QUERY_CHARS
               value: "[,],|"
+            - name: SPRING_NEO4J_URI
+              value: "bolt://{{.Release.Name}}:7687"
       restartPolicy: Always
       
