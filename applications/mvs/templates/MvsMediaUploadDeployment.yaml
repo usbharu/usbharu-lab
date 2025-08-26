@@ -21,7 +21,10 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: APPLICATION_S3_ACCESS_KEY
-              value: minio
+              valueFrom:
+                secretKeyRef:
+                  name: release-minio-config
+                  key: MINIO_ROOT_USER
             - name: APPLICATION_S3_BUCKET
               value: media
             - name: APPLICATION_S3_TMP_BUCKET
@@ -33,7 +36,10 @@ spec:
             - name: APPLICATION_S3_REGION
               value: us-east-1
             - name: APPLICATION_S3_SECRET
-              value: minio123
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ROOT_PASSWORD
+                  name: release-minio-config
           ports:
             - containerPort: 8080
               protocol: TCP

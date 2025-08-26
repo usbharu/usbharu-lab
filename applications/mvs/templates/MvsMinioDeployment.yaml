@@ -20,11 +20,10 @@ spec:
           image: quay.io/minio/minio
           imagePullPolicy: IfNotPresent
           args: [ "server", "/data", "--console-address", ':9001' ]
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-minio-config
           env:
-            - name: MINIO_ROOT_USER
-              value: minio
-            - name: MINIO_ROOT_PASSWORD
-              value: minio123
             - name: MINIO_SERVER_URL
               value: https://{{ .Release.Name }}-minio-mvs.usbharu.dev
           ports:
