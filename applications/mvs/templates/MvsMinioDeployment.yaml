@@ -47,7 +47,7 @@ spec:
                   - >
                     until mc alias set myminio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do echo '...waiting...' && sleep 1; done;
                     mc mb myminio/media;
-                    mc policy set download myminio/public-bucket;
+                    mc policy set download myminio/media;
                     mc mb myminio/tmp-media
       volumes:
         - name: storage
