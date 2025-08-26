@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-media-upload
+  labels:
+    app: {{ .Release.Name }}-mvs-media-upload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-media-upload
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-media-upload
+      labels:
+        app: {{ .Release.Name }}-mvs-media-upload
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-mvs-media-upload
+          image: ghcr.io/usbharu/mvs-media-upload
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: api
+      restartPolicy: Always
+      
