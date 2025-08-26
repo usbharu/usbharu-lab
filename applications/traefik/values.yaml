@@ -5,3 +5,5 @@ traefik:
         enabled: true
       serviceMonitor:
         enabled: true
+  deployment:
+    kind: DaemonSet
