@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-mvs-minio-public
 spec:
-  ingressClassName: traefik
+  ingressClassName: cloudflare-tunnel
   rules:
     - http:
         paths:
@@ -14,4 +14,4 @@ spec:
                 name: {{ .Release.Name }}-minio
                 port:
                   number: 9000
-      host: "{{ .Release.Name }}-minio.mvs.local"
+      host: "{{ .Release.Name }}-minio-mvs.usbharu.dev"
