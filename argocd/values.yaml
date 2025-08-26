@@ -34,3 +34,7 @@ secret:
 monitoring:
   webhookUrl: ""
   grafanaPassword: ""
+mvs:
+  minio:
+    accessKey: ""
+    secretKey: ""
