@@ -28,5 +28,7 @@ spec:
               value: "[,],|"
             - name: SPRING_NEO4J_URI
               value: "bolt://{{.Release.Name}}:7687"
+            - name: SPRING_NEO4J_AUTHENTICATION_PASSWORD
+              value: "your-strong-password"
       restartPolicy: Always
       
