@@ -9,7 +9,7 @@ neo4j:
     edition: "community" # "community" または "enterprise"
 
     # ライセンス契約への同意（Enterprise版の場合）
-
+  acceptLicenseAgreement: "yes"
   # データの永続化設定
   volumes:
     data:
