@@ -3,6 +3,11 @@ kind: Tenant
 metadata:
   name: {{ .Release.Name }}-minio
 spec:
+  buckets:
+    - name: tmp-media
+      region: jp
+    - name: media
+      region: jp
   ## Specification for MinIO Pool(s) in this Tenant.
   pools:
     ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
