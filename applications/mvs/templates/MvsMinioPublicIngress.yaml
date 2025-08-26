@@ -11,7 +11,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: minio
+                name: {{ .Release.Name }}-minio-service
                 port:
                   number: 9000
       host: "{{ .Release.Name }}-minio-mvs.usbharu.dev"
