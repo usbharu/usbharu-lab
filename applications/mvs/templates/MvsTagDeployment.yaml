@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-tag
+  labels:
+    app: {{ .Release.Name }}-mvs-tag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-tag
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-tag
+      labels:
+        app: {{ .Release.Name }}-mvs-tag
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-mvs-tag
+          image: ghcr.io/usbharu/mvs-tag
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+              protocol: TCP
+              name: api
+          env:
+            - name: SERVER_TOMCAT_RELAXED_QUERY_CHARS
+              value: "[,],|"
+      restartPolicy: Always
+      
