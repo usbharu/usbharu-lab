@@ -20,7 +20,7 @@ spec:
           image: ghcr.io/usbharu/mvs-tagger
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8000
+            - containerPort: 3000
               protocol: TCP
               name: api
       restartPolicy: Always
