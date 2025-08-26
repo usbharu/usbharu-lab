@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-content-scan
+  labels:
+    app: {{ .Release.Name }}-mvs-content-scan
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-content-scan
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-content-scan
+      labels:
+        app: {{ .Release.Name }}-mvs-content-scan
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-mvs-content-scan
+          image: ghcr.io/usbharu/mvs-content-scan
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+              protocol: TCP
+              name: api
+          env:
+            - name: APPLICATION_S3_URL
+              value: http://{{ .Release.Name }}-minio-service:9000
+            - name: APPLICATION_TAG_URL
+              value: http://{{ .Release.Name }}-mvs-tag-service:8082
+            - name: APPLICATION_TAGGER_URL
+              value: http://{{ .Release.Name }}-mvs-tagger-service:8000
+            - name: APPLICATION_CONTENT_URL
+              value: http://{{ .Release.Name }}-mvs-content-service:8081
+      restartPolicy: Always
+      
