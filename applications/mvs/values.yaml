@@ -1,19 +1,18 @@
 neo4j:
-  neo4j:
-    # 初期パスワードを設定（設定しない場合は自動生成されます）
-    password: "your-strong-password"
+  # 初期パスワードを設定（設定しない場合は自動生成されます）
+  password: "your-strong-password"
 
-    # Neo4jのバージョンやエディションを指定
-    image: "neo4j"
-    imageTag: "5.21.0"
-    edition: "community" # "community" または "enterprise"
+  # Neo4jのバージョンやエディションを指定
+  image: "neo4j"
+  imageTag: "5.21.0"
+  edition: "community" # "community" または "enterprise"
 
-    # ライセンス契約への同意（Enterprise版の場合）
-    acceptLicenseAgreement: "yes"
+  # ライセンス契約への同意（Enterprise版の場合）
+  acceptLicenseAgreement: "yes"
   # データの永続化設定
-    volumes:
-      data:
-        mode: "nfs-csi-fast"
-        defaultStorageClass:
-          requests:
-            storage: "10Gi"
+  volumes:
+    data:
+      mode: "nfs-csi-fast"
+      defaultStorageClass:
+        requests:
+          storage: "10Gi"
