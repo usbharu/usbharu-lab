@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mvs-media-upload-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-mvs-media-upload
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: api
+      name: api
+  type: NodePort
+  
