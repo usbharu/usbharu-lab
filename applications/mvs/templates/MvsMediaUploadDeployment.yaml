@@ -19,6 +19,15 @@ spec:
         - name: {{ .Release.Name }}-mvs-media-upload
           image: ghcr.io/usbharu/mvs-media-upload
           imagePullPolicy: IfNotPresent
+          env:
+            - name: APPLICATION_S3_ACCESS_KEY
+              value: minio
+            - name: APPLICATION_S3_BUCKET
+              value: media
+            - name: APPLICATION_S3_TMP_BUCKET
+              value: tmp-media
+            - name: APPLICATION_S3_ENDPOINT
+              value: http://{{ .Release.Name }}-minio:9000
           ports:
             - containerPort: 8080
               protocol: TCP
