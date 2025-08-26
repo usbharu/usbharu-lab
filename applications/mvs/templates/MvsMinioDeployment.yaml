@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-minio
+  labels:
+    app: {{ .Release.Name }}-minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-minio
+  template:
+    metadata:
+      name: {{ .Release.Name }}-minio
+      labels:
+        app: {{ .Release.Name }}-minio
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-minio
+          image: quay.io/minio/minio
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+      restartPolicy: Always
+      
