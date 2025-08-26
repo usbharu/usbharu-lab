@@ -5,9 +5,9 @@ neo4j:
     password: "your-strong-password"
 
   # Neo4jのバージョンやエディションを指定
-  image: "neo4j"
-  imageTag: "5.21.0"
-  edition: "community" # "community" または "enterprise"
+#  image: "neo4j"
+#  imageTag: "5.21.0"
+#  edition: "community" # "community" または "enterprise"
 
   # ライセンス契約への同意（Enterprise版の場合）
   acceptLicenseAgreement: "yes"
