@@ -1,6 +1,6 @@
 neo4j:
   neo4j:
-    name: mvs
+    name: mvs-neo4j
   # 初期パスワードを設定（設定しない場合は自動生成されます）
     password: "your-strong-password"
 
