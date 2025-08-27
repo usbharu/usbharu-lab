@@ -31,6 +31,6 @@ spec:
             - name: APPLICATION_TAGGER_URL
               value: http://{{ .Release.Name }}-mvs-tagger-service:8000
             - name: APPLICATION_CONTENT_URL
-              value: http://{{ .Release.Name }}-mvs-content-service:8081
+              value: http://{{ .Release.Name }}-mvs-content-service:8080
       restartPolicy: Always
       
