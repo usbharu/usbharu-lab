@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mvs-front
+  labels:
+    app: {{ .Release.Name }}-mvs-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mvs-front
+  template:
+    metadata:
+      name: {{ .Release.Name }}-mvs-front
+      labels:
+        app: {{ .Release.Name }}-mvs-front
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-mvs-front
+          image: ghcr.io/usbharu/mvs-mvs-front:v0.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+      restartPolicy: Always
+      
