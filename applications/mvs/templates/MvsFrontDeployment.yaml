@@ -22,5 +22,12 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
+          env:
+            - name: CONTENT
+              value: "http://{{.Release.Name}}-mvs-content-service:8080"
+            - name: TAG
+              value: "http://{{.Release.Name}}-mvs-tag-service:8082"
+            - name: MEDIA_UPLOAD
+              value: "http://{{.Release.Name}}-mvs-media-upload-service:8080"
       restartPolicy: Always
       
