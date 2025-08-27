@@ -15,6 +15,7 @@ cloudflare-tunnel-ingress-controller:
       tag: 2025.8.1
     replicaCount: 3
     protocol: http2
+    extraArgs: ["--post-quantum", "--edge-ip-version", "4"]
   resources:
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
