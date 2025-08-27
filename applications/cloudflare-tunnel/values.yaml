@@ -8,3 +8,4 @@ cloudflare-tunnel-ingress-controller:
   cloudflaredServiceMonitor:
     create: true
   replicaCount: 3
+  protocol: http2
