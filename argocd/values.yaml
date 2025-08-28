@@ -10,6 +10,7 @@ secret:
     usbharu: ""
     negi: ""
   cloudflare:
+    cloudflaredToken: ""
     accountId: ""
     tunnel:
       apiToken: ""
@@ -38,4 +39,3 @@ mvs:
   minio:
     accessKey: ""
     secretKey: ""
-cloudflaredToken: ""

@@ -22,7 +22,7 @@ spec:
       - name: monitoring.grafanaPassword
         value: {{ .Values.monitoring.grafanaPassword }}
       - name: cloudflaredToken
-        value: {{ .Values.cloudflaredToken }}
+        value: {{ .Values.secret.cloudflare.cloudflaredToken }}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
