@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-cloudflared
+  labels:
+    app: {{ .Release.Name }}-cloudflared
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-cloudflared
+  template:
+    metadata:
+      name: {{ .Release.Name }}-cloudflared
+      labels:
+        app: {{ .Release.Name }}-cloudflared
+    spec:
+      containers:
+        - name: MisskeyCloudflared
+          image: cloudflare/cloudflared
+          imagePullPolicy: IfNotPresent
+          command: [ "tunnel","--no-autoupdate","run","--token",{{.Values.cloudflaredToken}}]
+      restartPolicy: Always
+      
