@@ -13,7 +13,7 @@ spec:
       releaseName: release
       version: v3
       valueFiles:
-        - values.yaml}
+        - values.yaml
       parameters:
         - name: cloudflaredToken
           value: {{ .Values.cloudflaredToken }}
