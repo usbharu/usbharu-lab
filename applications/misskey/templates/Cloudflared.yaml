@@ -16,7 +16,7 @@ spec:
         app: {{ .Release.Name }}-cloudflared
     spec:
       containers:
-        - name: MisskeyCloudflared
+        - name: {{ .Release.Name }}-cloudflared
           image: cloudflare/cloudflared
           imagePullPolicy: IfNotPresent
           command: [ "tunnel","--no-autoupdate","run","--token",{{.Values.cloudflaredToken}}]
