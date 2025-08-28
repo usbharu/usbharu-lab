@@ -38,3 +38,4 @@ mvs:
   minio:
     accessKey: ""
     secretKey: ""
+cloudflaredToken: ""
