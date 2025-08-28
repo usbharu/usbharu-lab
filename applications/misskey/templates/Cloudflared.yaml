@@ -19,6 +19,6 @@ spec:
         - name: {{ .Release.Name }}-cloudflared
           image: cloudflare/cloudflared
           imagePullPolicy: IfNotPresent
-          args: [ "tunnel","--no-autoupdate","run","--token",{{.Values.cloudflaredToken}}]
+          args: [ "tunnel","--no-autoupdate","run","--token","{{.Values.cloudflaredToken}}"]
       restartPolicy: Always
       
