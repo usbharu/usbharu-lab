@@ -1,6 +1,0 @@
-letsencrypt:
-  email: admin@usbharu.dev
-
-cert-manager:
-  crds:
-    enabled: true
