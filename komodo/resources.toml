@@ -1,21 +1,4 @@
-# Git is authoritative. Secret values remain in Komodo / on the host.
-[[resource_sync]]
-name = "usbharu-lab"
-tags = ["usbharu-lab"]
-[resource_sync.config]
-repo = "usbharu/usbharu-lab"
-branch = "komodo"
-git_provider = "github.com"
-resource_path = ["komodo"]
-managed = false
-delete = false
-include_resources = true
-include_variables = false
-include_user_groups = false
-match_tags = ["usbharu-lab"]
-pending_alert = false
-webhook_enabled = false
-
+# Apply bootstrap/sync.toml separately; a running sync cannot update itself.
 [[stack]]
 name = "ocms"
 description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images with host runtime override."
@@ -42,7 +25,7 @@ auto_pull = false
 run_build = false
 poll_for_updates = false
 auto_update = false
-destroy_before_deploy = true
+destroy_before_deploy = false
 webhook_enabled = false
 extra_args = ["--wait", "--wait-timeout", "300"]
 
@@ -68,7 +51,7 @@ auto_pull = false
 run_build = false
 poll_for_updates = false
 auto_update = false
-destroy_before_deploy = true
+destroy_before_deploy = false
 webhook_enabled = false
 extra_args = ["--wait", "--wait-timeout", "300"]
 
