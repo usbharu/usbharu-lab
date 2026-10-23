@@ -1,0 +1,27 @@
+http:
+  routers:
+    ocms:
+      entryPoints: [web]
+      rule: Host(`ocms.usbharu.dev`)
+      service: ocms
+    pocket-id:
+      entryPoints: [web]
+      rule: Host(`id.usbharu.dev`)
+      service: pocket-id
+    komodo:
+      entryPoints: [web]
+      rule: Host(`komodo.usbharu.dev`)
+      service: komodo
+  services:
+    ocms:
+      loadBalancer:
+        servers:
+          - url: http://ocms-bff:8080
+    pocket-id:
+      loadBalancer:
+        servers:
+          - url: http://pocket-id:1411
+    komodo:
+      loadBalancer:
+        servers:
+          - url: http://komodo-core:9120

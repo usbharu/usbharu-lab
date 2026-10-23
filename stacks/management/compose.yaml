@@ -1,0 +1,92 @@
+name: ocms-management
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    command: [--quiet, --wiredTigerCacheSizeGB, '0.25']
+    mem_limit: 512m
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DATABASE_PASSWORD:?Initialize server credentials}
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    labels:
+      komodo.skip: ''
+  core:
+    image: ghcr.io/moghtech/komodo-core:2.3.4
+    restart: unless-stopped
+    init: true
+    mem_limit: 256m
+    depends_on: [mongo]
+    ports: ['127.0.0.1:9120:9120']
+    env_file: /etc/komodo/stacks/management/komodo.env
+    environment:
+      KOMODO_DATABASE_ADDRESS: mongo:27017
+    volumes:
+      - keys:/config/keys
+      - /etc/komodo/backups:/backups
+    networks:
+      default: {}
+      edge:
+        aliases: [komodo-core]
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:2.3.4
+    restart: unless-stopped
+    init: true
+    mem_limit: 256m
+    depends_on: [core]
+    environment:
+      PERIPHERY_CORE_ADDRESS: ws://core:9120
+      PERIPHERY_CONNECT_AS: ocms-ubuntu
+      PERIPHERY_CORE_PUBLIC_KEYS: file:/config/keys/core.pub
+      PERIPHERY_ROOT_DIRECTORY: /etc/komodo
+      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+    volumes:
+      - keys:/config/keys
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - /etc/komodo:/etc/komodo
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:v2.19.1
+    restart: unless-stopped
+    mem_limit: 192m
+    env_file: /etc/komodo/stacks/management/pocket.env
+    ports: ['127.0.0.1:1411:1411']
+    volumes: [pocket-data:/app/data]
+    healthcheck:
+      test: [CMD, /app/pocket-id, healthcheck]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      edge:
+        aliases: [pocket-id]
+  traefik:
+    image: traefik:v3.6
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      GOMEMLIMIT: 96MiB
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.transport.respondingtimeouts.readtimeout=660s
+      - --entrypoints.web.forwardedheaders.trustedips=172.30.91.0/24
+      - --providers.file.filename=/etc/traefik/routes.yaml
+      - --api.dashboard=false
+      - --log.level=WARN
+    ports: ['127.0.0.1:18080:80']
+    volumes: ['./routes.yaml:/etc/traefik/routes.yaml:ro']
+    networks: [edge]
+
+volumes:
+  mongo-data:
+  mongo-config:
+  keys:
+  pocket-data:
+networks:
+  edge:
+    name: ocms-edge
+    ipam:
+      config:
+        - subnet: 172.30.91.0/24

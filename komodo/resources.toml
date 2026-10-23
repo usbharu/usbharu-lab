@@ -1,0 +1,93 @@
+# Git is authoritative. Secret values remain in Komodo / on the host.
+[[resource_sync]]
+name = "usbharu-lab"
+tags = ["usbharu-lab"]
+[resource_sync.config]
+repo = "usbharu/usbharu-lab"
+branch = "komodo"
+git_provider = "github.com"
+resource_path = ["komodo"]
+managed = false
+delete = false
+include_resources = true
+include_variables = false
+include_user_groups = false
+match_tags = ["usbharu-lab"]
+pending_alert = false
+webhook_enabled = false
+
+[[stack]]
+name = "ocms"
+description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images with host runtime override."
+tags = ["usbharu-lab"]
+# Sync deploys configuration changes; the procedure also checks Compose file changes.
+deploy = true
+[stack.config]
+server = "ocms-ubuntu"
+repo = "usbharu/usbharu-lab"
+branch = "komodo"
+git_provider = "github.com"
+files_on_host = false
+run_directory = "stacks/ocms"
+file_paths = ["compose.yaml"]
+project_name = "ocms"
+env_file_path = ".komodo.env"
+additional_env_files = [{ path = "/etc/komodo/stacks/management/ocms.env", track = false }]
+environment = """
+R2_ACCESS_KEY_ID = [[OCMS_R2_ACCESS_KEY_ID]]
+R2_SECRET_ACCESS_KEY = [[OCMS_R2_SECRET_ACCESS_KEY]]
+"""
+auto_pull = false
+run_build = false
+poll_for_updates = false
+auto_update = false
+destroy_before_deploy = true
+webhook_enabled = false
+extra_args = ["--wait", "--wait-timeout", "300"]
+
+[[stack]]
+name = "ocms-management"
+description = "Komodo, Pocket ID and Traefik; credentials and state stay on the host."
+tags = ["usbharu-lab"]
+deploy = true
+[stack.config]
+server = "ocms-ubuntu"
+repo = "usbharu/usbharu-lab"
+branch = "komodo"
+git_provider = "github.com"
+files_on_host = false
+run_directory = "stacks/management"
+file_paths = ["compose.yaml"]
+config_files = [{ path = "routes.yaml" }]
+project_name = "ocms-management"
+env_file_path = ".komodo.env"
+additional_env_files = [{ path = "/etc/komodo/stacks/management/.env", track = false }]
+auto_pull = false
+run_build = false
+poll_for_updates = false
+auto_update = false
+destroy_before_deploy = true
+webhook_enabled = false
+extra_args = ["--wait", "--wait-timeout", "300"]
+
+[[procedure]]
+name = "usbharu-lab-gitops"
+description = "GitHub push to komodo branch, plus five-minute reconciliation."
+tags = ["usbharu-lab"]
+[procedure.config]
+schedule_format = "Cron"
+schedule = "0 */5 * * * *"
+schedule_timezone = "Asia/Tokyo"
+schedule_enabled = true
+schedule_alert = false
+failure_alert = true
+webhook_enabled = true
+[[procedure.config.stage]]
+name = "Sync resource definitions"
+executions = [{ execution.type = "RunSync", execution.params.sync = "usbharu-lab" }]
+[[procedure.config.stage]]
+name = "Deploy OCMS if changed"
+executions = [{ execution.type = "DeployStackIfChanged", execution.params.stack = "ocms" }]
+[[procedure.config.stage]]
+name = "Deploy management if changed"
+executions = [{ execution.type = "DeployStackIfChanged", execution.params.stack = "ocms-management" }]
