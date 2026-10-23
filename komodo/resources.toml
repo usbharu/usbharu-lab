@@ -28,6 +28,7 @@ repo = "usbharu/usbharu-lab"
 branch = "komodo"
 git_provider = "github.com"
 files_on_host = false
+clone_path = "/etc/komodo/gitops/ocms"
 run_directory = "stacks/ocms"
 file_paths = ["compose.yaml"]
 project_name = "ocms"
@@ -56,6 +57,7 @@ repo = "usbharu/usbharu-lab"
 branch = "komodo"
 git_provider = "github.com"
 files_on_host = false
+clone_path = "/etc/komodo/gitops/management"
 run_directory = "stacks/management"
 file_paths = ["compose.yaml"]
 config_files = [{ path = "routes.yaml" }]
