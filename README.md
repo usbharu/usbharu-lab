@@ -21,7 +21,7 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | `bootstrap/sync.toml` | 初回に手動設定するResource Sync。実行中のSync自身は同期対象にしない |
 | `komodo/resources.toml` | 2つのStack、GitOps用Procedure |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
-| `stacks/management/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
+| `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの6サービス。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
