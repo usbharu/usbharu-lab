@@ -183,6 +183,8 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     memswap_limit: 1536m
   bff:
+    labels:
+      dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
     image: ghcr.io/usbharu/ocms:v0.1.1
     pull_policy: missing
     restart: unless-stopped

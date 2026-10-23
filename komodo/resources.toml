@@ -43,7 +43,7 @@ files_on_host = false
 clone_path = "/etc/komodo/gitops/management"
 run_directory = "stacks/management"
 file_paths = ["compose.yaml"]
-config_files = [{ path = "routes.yaml" }]
+config_files = [{ path = "traefik/routes.yaml", services = ["traefik"], requires = "Restart" }]
 project_name = "ocms-management"
 env_file_path = ".komodo.env"
 additional_env_files = [{ path = "/etc/komodo/stacks/management/.env", track = false }]
