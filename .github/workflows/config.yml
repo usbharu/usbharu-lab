@@ -1,0 +1,14 @@
+name: Validate GitOps configuration
+on:
+  push:
+    branches: [komodo]
+  pull_request:
+    branches: [komodo]
+permissions:
+  contents: read
+jobs:
+  safeguards:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 scripts/check-config.py

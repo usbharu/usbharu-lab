@@ -7,10 +7,10 @@ Komodo 2.3.4で管理するサーバーの構成。`komodo`ブランチを同期
 ## 変更を反映する
 
 1. `komodo/resources.toml`、`stacks/ocms/compose.yaml`、`stacks/management/`を編集する。
-2. 差分を確認して`komodo`ブランチにコミット・pushする。
+2. `python3 scripts/check-config.py`と差分を確認して`komodo`ブランチにコミット・pushする。
 3. [Komodo](https://komodo.usbharu.dev)のProcedure `usbharu-lab-gitops`で実行結果を確認する。
 
-ProcedureはResource Sync `usbharu-lab`でリソース定義を同期し、続いてOCMS、管理用スタックの順に`DeployStackIfChanged`を実行する。GitHub Webhookは`komodo`ブランチのpushに反応する。5分ごとのスケジュールも同じProcedureを実行するため、Webhookの取りこぼしからも復帰できる。
+ProcedureはResource Sync `usbharu-lab`でリソース定義を同期する。設定変更があればこの段階でもデプロイする。続いてOCMS、管理用スタックの順に`DeployStackIfChanged`を実行する。GitHub Webhookは`komodo`ブランチのpushに反応する。5分ごとのスケジュールも同じProcedureを実行するため、Webhookの取りこぼしからも復帰できる。
 
 Gitを設定の基準にするため、KomodoのUIで行った構成変更は次の同期で戻る。Secretの更新はUIで行う。Resource Syncの`managed`（UIからGitへ書き戻す機能）、リソースの自動削除、変数・ユーザーグループの同期は無効。
 
@@ -18,7 +18,8 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 
 | 場所 | 内容 |
 | --- | --- |
-| `komodo/resources.toml` | 2つのStack、Resource Sync、GitOps用Procedure |
+| `bootstrap/sync.toml` | 初回に手動設定するResource Sync。実行中のSync自身は同期対象にしない |
+| `komodo/resources.toml` | 2つのStack、GitOps用Procedure |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの6サービス。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
@@ -53,7 +54,7 @@ Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホ�
 
 1. Server `ocms-ubuntu`が接続済みで、必要なイメージと秘密ファイルが存在することを確認する。
 2. KomodoのResource Syncを`usbharu-lab`という名前で作成し、Repository=`usbharu/usbharu-lab`、Branch=`komodo`、Resource Path=`komodo`に設定する。Managed、Delete、Variables、User Groupsを無効にする。
-3. Pending差分を確認してSyncを実行する。Stack定義とProcedureが作成される。
+3. `bootstrap/sync.toml`も参照して設定を確認する。Pending差分を確認してSyncを実行する。Stack定義とProcedureが作成される。
 4. Procedure `usbharu-lab-gitops`を実行する。必要ならGitHubのpush用Webhookを`https://komodo.usbharu.dev/listener/github/procedure/usbharu-lab-gitops/komodo`へ登録する。Content typeはJSON、Secretはサーバーの`KOMODO_WEBHOOK_SECRET`と同じ値を安全な経路で設定する。
 
 自動反映を止める場合は、GitHub側のWebhookを無効にし、Gitの`procedure.config.schedule_enabled`と`webhook_enabled`を`false`へ変更して同期する。緊急時はまずKomodoのUIで同じ設定を無効にしてからGitにも反映する。
