@@ -1,0 +1,238 @@
+name: ocms
+services:
+  catalog:
+    image: ghcr.io/usbharu/ocms:v0.1.1
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      CATALOG_URL: http://catalog:8080
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SERVICE: catalog
+      MEDIA_URL: http://worker:8080
+      DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+    depends_on: {}
+    volumes:
+    - /var/run/postgresql:/var/run/postgresql:ro
+    mem_limit: 128m
+  transfer:
+    image: ghcr.io/usbharu/ocms:v0.1.1
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      CATALOG_URL: http://catalog:8080
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SERVICE: transfer
+      MEDIA_URL: http://worker:8080
+      DATABASE_URL: postgres://ocms_transfer:${TRANSFER_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      CRYPTO_CONFIG: /run/secrets/crypto.yaml
+      S3_ENDPOINT: 76906b4e38909e314e89939ec9f8e485.r2.cloudflarestorage.com
+      S3_ACCESS_KEY: ${R2_ACCESS_KEY_ID:?Configure R2 credentials}
+      S3_SECRET_KEY: ${R2_SECRET_ACCESS_KEY:?Configure R2 credentials}
+      S3_TLS: 'true'
+      S3_BUCKET: ocms-data
+    volumes:
+    - /var/run/postgresql:/var/run/postgresql:ro
+    - /etc/komodo/secrets/ocms/crypto.yaml:/run/secrets/crypto.yaml:ro
+    depends_on:
+      catalog:
+        condition: service_healthy
+    mem_limit: 128m
+  search:
+    image: ghcr.io/usbharu/ocms:v0.1.1
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      CATALOG_URL: http://catalog:8080
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SERVICE: search
+      DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      MEDIA_URL: http://worker:8080
+      RUNTIME_URL: http://runtime:8080
+    depends_on:
+      catalog:
+        condition: service_healthy
+    volumes:
+    - /var/run/postgresql:/var/run/postgresql:ro
+    mem_limit: 128m
+  runtime:
+    image: ${OCMS_RUNTIME_IMAGE:-ghcr.io/usbharu/ocms-runtime:v0.1.1}
+    pull_policy: missing
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
+      INFERENCE_THREADS: '2'
+    volumes:
+    - models:/models
+    tmpfs:
+    - /tmp:rw,size=512m,mode=1777
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 60
+    depends_on: {}
+    mem_limit: 2g
+    memswap_limit: 8g
+    cpus: 1.5
+  worker:
+    image: ghcr.io/usbharu/ocms:v0.1.1
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      CATALOG_URL: http://catalog:8080
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SERVICE: worker
+      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      TRANSFER_URL: http://transfer:8080
+      SEARCH_URL: http://search:8080
+      RUNTIME_URL: http://runtime:8080
+      MEDIA_JOB_TIMEOUT_SECONDS: ${MEDIA_JOB_TIMEOUT_SECONDS:-7200}
+    tmpfs:
+    - /tmp:rw,size=768m,mode=1777
+    mem_limit: 768m
+    cpus: 1
+    depends_on:
+      transfer:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+      runtime:
+        condition: service_healthy
+    volumes:
+    - /var/run/postgresql:/var/run/postgresql:ro
+    memswap_limit: 1536m
+  bff:
+    image: ghcr.io/usbharu/ocms:v0.1.1
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      CATALOG_URL: http://catalog:8080
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      SERVICE: bff
+      TRANSFER_URL: http://transfer:8080
+      SEARCH_URL: http://search:8080
+      MEDIA_URL: http://worker:8080
+      AUTH_MODE: oidc
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+    ports:
+    - 127.0.0.1:${OCMS_PORT:-8080}:8080
+    depends_on:
+      transfer:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+    mem_limit: 128m
+    networks:
+      default: {}
+      edge:
+        aliases:
+        - ocms-bff
+volumes:
+  models: {}
+networks:
+  edge:
+    external: true
+    name: ocms-edge
