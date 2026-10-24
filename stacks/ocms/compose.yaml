@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.1.1
+    image: ghcr.io/usbharu/ocms:v0.2.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -34,7 +34,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.1.1
+    image: ghcr.io/usbharu/ocms:v0.2.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -76,7 +76,7 @@ services:
         condition: service_healthy
     mem_limit: 128m
   search:
-    image: ghcr.io/usbharu/ocms:v0.1.1
+    image: ghcr.io/usbharu/ocms:v0.2.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -137,7 +137,7 @@ services:
     memswap_limit: 8g
     cpus: 1.5
   worker:
-    image: ghcr.io/usbharu/ocms:v0.1.1
+    image: ghcr.io/usbharu/ocms:v0.2.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -185,7 +185,7 @@ services:
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.1.1
+    image: ghcr.io/usbharu/ocms:v0.2.0
     pull_policy: missing
     restart: unless-stopped
     init: true
