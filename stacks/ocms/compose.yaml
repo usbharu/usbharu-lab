@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -36,7 +36,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
     mem_limit: 128m
   search:
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -107,6 +107,7 @@ services:
       DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
       MEDIA_URL: http://worker:8080
       RUNTIME_URL: http://runtime:8080
+      SEMANTIC_SEARCH_ENABLED: false
     depends_on:
       catalog:
         condition: service_healthy
@@ -114,7 +115,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.3.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.3.1-cpu
     pull_policy: missing
     environment:
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
@@ -139,7 +140,7 @@ services:
     memswap_limit: 8g
     cpus: 1.5
   worker:
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -170,6 +171,7 @@ services:
       SEARCH_URL: http://search:8080
       RUNTIME_URL: http://runtime:8080
       MEDIA_JOB_TIMEOUT_SECONDS: ${MEDIA_JOB_TIMEOUT_SECONDS:-7200}
+      SEMANTIC_SEARCH_ENABLED: false
     tmpfs:
     - /tmp:rw,size=768m,mode=1777
     mem_limit: 768m
@@ -187,7 +189,7 @@ services:
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -235,7 +237,7 @@ services:
         aliases:
         - ocms-bff
   migrate:
-    image: ghcr.io/usbharu/ocms:v0.3.0
+    image: ghcr.io/usbharu/ocms:v0.3.1
     pull_policy: missing
     restart: 'no'
     user: ${OCMS_MIGRATE_UID:?Configure host postgres uid}:${OCMS_MIGRATE_GID:?Configure host postgres gid}
