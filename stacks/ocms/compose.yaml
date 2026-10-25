@@ -108,8 +108,11 @@ services:
       MEDIA_URL: http://worker:8080
       RUNTIME_URL: http://runtime:8080
       SEMANTIC_SEARCH_ENABLED: false
+      RECOMMENDATION_URL: http://recommender:8080
     depends_on:
       catalog:
+        condition: service_healthy
+      recommender:
         condition: service_healthy
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
@@ -259,6 +262,43 @@ services:
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
+  recommender:
+    image: ghcr.io/usbharu/ocms-runtime:v0.4.0-cpu
+    command:
+    - uvicorn
+    - recommendation_server:app
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8080'
+    - --no-access-log
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    tmpfs:
+    - /tmp:rw,size=64m,mode=1777
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    pull_policy: missing
+    mem_limit: 256m
+    memswap_limit: 512m
+    cpus: 0.5
 volumes:
   models: {}
 networks:

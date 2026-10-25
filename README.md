@@ -22,13 +22,21 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | `komodo/resources.toml` | 2つのStack、GitOps用Procedure |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
-| `stacks/ocms/compose.yaml` | OCMSの6サービスと起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
+| `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.3.0`と`ghcr.io/usbharu/ocms-runtime:v0.3.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.4.0`と`ghcr.io/usbharu/ocms-runtime:v0.4.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
 RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
+
+## おすすめ用サービス
+
+v0.4.0の個人向け「おすすめ」には、Searchに加えて専用の`recommender`が必要。Runtimeと同じCPU版イメージを使い、`uvicorn recommendation_server:app`で起動する。Searchの`RECOMMENDATION_URL`は`http://recommender:8080`とし、推薦サービスがhealthyになってからSearchを起動する。リリースタグだけの更新では、新しく追加されたサービスや接続設定は反映されない。
+
+推薦エンジンはお気に入りのタグ・キャラクターをTF-IDFで評価する。Embeddingのモデル取得や`SEMANTIC_SEARCH_ENABLED`には依存しない。DB・S3資格情報とモデル用ボリュームは渡さず、内部認証と任意のOTLP接続先だけを使用する。1スレッド、CPU上限0.5、メモリ256 MiB・swap込み512 MiBで動作させる。
+
+2026-10-25、デプロイ構成に専用サービスと接続先がなく、推薦APIが503を返すことを確認して追加した。推薦用マイグレーション010と既存ロールの権限は適用済みだったため、DB変更は不要。
 
 ## DBマイグレーションを伴う更新
 
@@ -38,7 +46,7 @@ RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE
 
 更新前にBFF・Worker・Search・Transfer・Catalogを停止し、PostgreSQL 17付属の`/usr/lib/postgresql/17/bin/pg_dump -Fc`でOCMS DBをバックアップし、同じディレクトリの`pg_restore`で読み出しを検証する。暗号鍵・環境ファイル・旧Composeもサーバー上の権限700のディレクトリへ保存し、ファイルは権限600を維持する。バックアップに機密情報を含むため、Gitへ追加しない。PostgreSQL、Pocket ID、Komodo、Traefik、他アプリは停止しない。
 
-旧方式のDBを初めて引き継ぐときだけ、適用済みSQLをスキーマと照合して`ocms migrate baseline <番号>`を実行する。baselineはSQLを再実行せず履歴を登録する。v0.3.0への更新時は006まで適用済みで、007・008が未適用だったため`baseline 6`を使用した。現在は008まで適用済みで、baselineを再実行しない。標準SQLが権限を付与する`catalog_app`・`transfer_app`・`search_app`・`media_app`はNOLOGINの互換ロールとして作成し、対応する既存`ocms_*`ロールへ継承させる。既存のログインロールやパスワードは変更しない。
+旧方式のDBを初めて引き継ぐときだけ、適用済みSQLをスキーマと照合して`ocms migrate baseline <番号>`を実行する。baselineはSQLを再実行せず履歴を登録する。v0.3.0への更新時は006まで適用済みで、007・008が未適用だったため`baseline 6`を使用した。v0.3.0更新で008まで適用し、v0.4.0では010まで移行済み。baselineを再実行しない。標準SQLが権限を付与する`catalog_app`・`transfer_app`・`search_app`・`media_app`はNOLOGINの互換ロールとして作成し、対応する既存`ocms_*`ロールへ継承させる。既存のログインロールやパスワードは変更しない。
 
 その後`migrate up`で007（お気に入り）と008（レーティング）を適用する。008は既存の完了済みタグJobを処理待ちへ戻すため、更新後に既存画像・動画・PDFのレーティングを順次判定する。タグ・キャラクターの手動編集と既存ファイルは保持する。
 
