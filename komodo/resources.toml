@@ -1,7 +1,7 @@
 # Apply bootstrap/sync.toml separately; a running sync cannot update itself.
 [[stack]]
 name = "ocms"
-description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images with host runtime override."
+description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images and tracked database migrations."
 tags = ["usbharu-lab"]
 # Sync deploys configuration changes; the procedure also checks Compose file changes.
 deploy = true

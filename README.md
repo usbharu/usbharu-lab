@@ -22,15 +22,31 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | `komodo/resources.toml` | 2つのStack、GitOps用Procedure |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
-| `stacks/ocms/compose.yaml` | OCMSの6サービス。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
+| `stacks/ocms/compose.yaml` | OCMSの6サービスと起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.1.1`と`ghcr.io/usbharu/ocms-runtime:v0.1.1`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルド・DBマイグレーション・モデル取得はこのGitOpsには含まれない。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.3.0`と`ghcr.io/usbharu/ocms-runtime:v0.3.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
-現在のサーバーは空き容量が約5.2 GiBで、GHCR Runtimeは圧縮状態でも約3.36 GiBある。Runtimeはホストの`ocms.env`に`OCMS_RUNTIME_IMAGE=ocms-runtime:local`を設定し、検証済みのCPU版を継続使用する。十分なディスク容量を確保した後、この変数を削除してKomodoでOCMSを手動デプロイし、モデルのロードとメディア処理を確認する。ホスト変数はGitのファイル差分として検知されない。
+RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
 
-Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホスト名の転送先は`http://127.0.0.1:18080`。Tunnel・ホストのPostgreSQL・既存の他アプリは、このリポジトリから変更しない。
+## DBマイグレーションを伴う更新
+
+`migrate`サービスがアプリと同じタグの`ocms migrate up`を実行し、正常終了してからCatalogを起動する。後続サービスはCatalog経由で待機する。ホストのPostgreSQLは継続使用し、DBや暗号鍵を作り直さない。
+
+管理接続はホストの`postgres`ユーザーと同じUID/GIDでPostgreSQLのUNIXソケットへ接続するpeer認証。ホストの`ocms.env`に`OCMS_MIGRATE_UID`・`OCMS_MIGRATE_GID`を設定する。管理者パスワードは不要で、この接続は`migrate`だけに渡す。通常サービスは引き続き`ocms_catalog`・`ocms_transfer`・`ocms_search`・`ocms_media`を使う。
+
+更新前にBFF・Worker・Search・Transfer・Catalogを停止し、PostgreSQL 17付属の`/usr/lib/postgresql/17/bin/pg_dump -Fc`でOCMS DBをバックアップし、同じディレクトリの`pg_restore`で読み出しを検証する。暗号鍵・環境ファイル・旧Composeもサーバー上の権限700のディレクトリへ保存し、ファイルは権限600を維持する。バックアップに機密情報を含むため、Gitへ追加しない。PostgreSQL、Pocket ID、Komodo、Traefik、他アプリは停止しない。
+
+旧方式のDBを初めて引き継ぐときだけ、適用済みSQLをスキーマと照合して`ocms migrate baseline <番号>`を実行する。baselineはSQLを再実行せず履歴を登録する。v0.3.0への更新時は006まで適用済みで、007・008が未適用だったため`baseline 6`を使用した。現在は008まで適用済みで、baselineを再実行しない。標準SQLが権限を付与する`catalog_app`・`transfer_app`・`search_app`・`media_app`はNOLOGINの互換ロールとして作成し、対応する既存`ocms_*`ロールへ継承させる。既存のログインロールやパスワードは変更しない。
+
+その後`migrate up`で007（お気に入り）と008（レーティング）を適用する。008は既存の完了済みタグJobを処理待ちへ戻すため、更新後に既存画像・動画・PDFのレーティングを順次判定する。タグ・キャラクターの手動編集と既存ファイルは保持する。
+
+移行後は`public.schema_migrations`が`version=8, dirty=false`であること、既存Asset・Blob・Original・Principalの件数と新テーブルの権限を確認してから、Komodoで新しい構成をデプロイする。以後の更新はアプリ停止・バックアップ後に同じ`migrate up`を使い、baselineを再実行しない。失敗時はアプリを停止したまま調査し、dirty状態を推測で解除しない。DB変更はGitのrevertだけでは戻らない。
+
+Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホスト名の転送先は`http://127.0.0.1:18080`。Tunnel・ホストのPostgreSQLサービス設定・既存の他アプリは、このリポジトリから変更しない。
+
+2026-10-25の更新では、`/var/backups/ocms/v0.3.0-20261025T073358Z`へDBと設定を保存し、読み出し・移行前後の件数一致・新テーブルの権限を確認した。移行履歴は`version=8, dirty=false`。
 
 ## 機密情報の置き場所
 
