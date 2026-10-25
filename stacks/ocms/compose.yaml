@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.2.0
+    image: ghcr.io/usbharu/ocms:v0.3.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -29,12 +29,14 @@ services:
       SERVICE: catalog
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
-    depends_on: {}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.2.0
+    image: ghcr.io/usbharu/ocms:v0.3.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -76,7 +78,7 @@ services:
         condition: service_healthy
     mem_limit: 128m
   search:
-    image: ghcr.io/usbharu/ocms:v0.2.0
+    image: ghcr.io/usbharu/ocms:v0.3.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -112,7 +114,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   runtime:
-    image: ${OCMS_RUNTIME_IMAGE:-ghcr.io/usbharu/ocms-runtime:v0.1.1}
+    image: ghcr.io/usbharu/ocms-runtime:v0.3.0-cpu
     pull_policy: missing
     environment:
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
@@ -137,7 +139,7 @@ services:
     memswap_limit: 8g
     cpus: 1.5
   worker:
-    image: ghcr.io/usbharu/ocms:v0.2.0
+    image: ghcr.io/usbharu/ocms:v0.3.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -185,7 +187,7 @@ services:
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.2.0
+    image: ghcr.io/usbharu/ocms:v0.3.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -232,6 +234,29 @@ services:
       edge:
         aliases:
         - ocms-bff
+  migrate:
+    image: ghcr.io/usbharu/ocms:v0.3.0
+    pull_policy: missing
+    restart: 'no'
+    user: ${OCMS_MIGRATE_UID:?Configure host postgres uid}:${OCMS_MIGRATE_GID:?Configure host postgres gid}
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    command:
+    - migrate
+    - up
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgres://postgres@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      APP_DB_PASSWORD: ${CATALOG_DB_PASSWORD:?Configure host ocms.env}
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+    - /var/run/postgresql:/var/run/postgresql:ro
+    mem_limit: 128m
 volumes:
   models: {}
 networks:
