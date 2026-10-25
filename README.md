@@ -77,7 +77,7 @@ Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホ�
 
 障害時はKomodoのProcedure・Sync・StackのUpdatesを確認する。管理画面へ接続できなければSSHで`docker ps`と`systemctl status cloudflared`を確認する。構成を戻す場合は対象コミットを`git revert`してpushする。DB・ボリューム・暗号鍵の状態はGitのrevertでは戻らない。
 
-2026-10-25にはPeriphery内の`docker compose up --wait`が長時間残り、OCMSのDeployStackとGitOpsのSync・Procedureが`Resource is busy`になった。OCMSを正常起動した後、Peripheryコンテナだけを再起動して滞留処理を解消した。続けてGitOps Procedureの全段階と、KomodoからのOCMSのDeployStackが成功することを確認した。Core・MongoDB・DB・稼働アプリのデータは作り直していない。正当なデプロイの実行中にもbusyになるため、復旧前に実行履歴とPeriphery内のプロセスを確認する。
+2026-10-25にはPeriphery内の`docker compose up --wait`が長時間残り、OCMSのDeployStackとGitOpsのSync・Procedureが`Resource is busy`になった。OCMSを正常起動した後、Peripheryコンテナだけを再起動して滞留処理を解消した。続けてGitOps Procedureの全段階と、KomodoからのOCMSのDeployStackが成功することを確認した。さらにCoreの再起動時処理で、中断後も実行中表示だった4件の履歴を整理し、実行中件数0と再実行成功を確認した。Core・MongoDB・DB・稼働アプリのデータは作り直していない。正当なデプロイの実行中にもbusyになるため、復旧前に実行履歴とPeriphery内のプロセスを確認する。
 
 v0.3.0反映後は6サービスがhealthy、migrateが終了コード0。既存4件のタグJob再処理とレーティングの保存、生成画像によるCPU版Taggerの応答、OCMS・Pocket ID・Komodoの公開URLのHTTP 200を確認した。Embedding・Whisperの新ONNXモデルは別途事前転送を進めており、完了後に固定コミットのSHA-256を照合して既存モデル用ボリュームへ配置する。
 
