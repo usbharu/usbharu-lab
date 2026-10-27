@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -36,7 +36,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
     mem_limit: 128m
   search:
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -118,12 +118,13 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.5.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.6.0-cpu
     pull_policy: missing
     environment:
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: '2'
+      WEB_CONCURRENCY: '1'
     volumes:
     - models:/models
     tmpfs:
@@ -143,7 +144,7 @@ services:
     memswap_limit: 8g
     cpus: 1.5
   worker:
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -174,11 +175,13 @@ services:
       SEARCH_URL: http://search:8080
       RUNTIME_URL: http://runtime:8080
       MEDIA_JOB_TIMEOUT_SECONDS: ${MEDIA_JOB_TIMEOUT_SECONDS:-7200}
+      MEDIA_WORKER_CONCURRENCY: '3'
+      MEDIA_PDF_PAGE_CONCURRENCY: '2'
       SEMANTIC_SEARCH_ENABLED: false
     tmpfs:
-    - /tmp:rw,size=768m,mode=1777
-    mem_limit: 768m
-    cpus: 1
+    - /tmp:rw,size=1536m,mode=1777
+    mem_limit: 1536m
+    cpus: 2
     depends_on:
       transfer:
         condition: service_healthy
@@ -188,11 +191,11 @@ services:
         condition: service_healthy
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
-    memswap_limit: 1536m
+    memswap_limit: 3072m
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -240,7 +243,7 @@ services:
         aliases:
         - ocms-bff
   migrate:
-    image: ghcr.io/usbharu/ocms:v0.5.0
+    image: ghcr.io/usbharu/ocms:v0.6.0
     pull_policy: missing
     restart: 'no'
     user: ${OCMS_MIGRATE_UID:?Configure host postgres uid}:${OCMS_MIGRATE_GID:?Configure host postgres gid}
@@ -263,7 +266,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   recommender:
-    image: ghcr.io/usbharu/ocms-runtime:v0.5.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.6.0-cpu
     command:
     - uvicorn
     - recommendation_server:app
