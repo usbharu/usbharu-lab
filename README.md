@@ -26,9 +26,17 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.4.0`と`ghcr.io/usbharu/ocms-runtime:v0.4.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.6.0`と`ghcr.io/usbharu/ocms-runtime:v0.6.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
 RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
+
+## Workerの並列処理
+
+v0.6.0では`MEDIA_WORKER_CONCURRENCY=3`を指定し、1つのWorkerプロセスで最大3件のJobを同時に処理する。コンテナの台数は増やさない。PDF内のページ処理は`MEDIA_PDF_PAGE_CONCURRENCY=2`とする。WorkerのCPU上限は2、メモリ1536 MiB・swap込み3072 MiB、平文一時領域のtmpfsは1536 MiBに設定する。
+
+CPU版Runtimeは`WEB_CONCURRENCY=1`・`INFERENCE_THREADS=2`を指定する。推論プロセスごとのモデル重複を避けるため、推論の並列数は増やさない。Jobの並列化によりOCRや変換は同時に進むが、推論は直列になる。約3.8 GiBの試験環境における実メディアの最大負荷・速度は未評価で、並列数3による速度向上は保証しない。
+
+v0.5.0からv0.6.0への更新に追加のDBマイグレーションはない。既存のモデル用ボリューム、DB、暗号鍵、R2のデータを継続利用する。
 
 ## おすすめ用サービス
 
