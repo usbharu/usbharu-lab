@@ -6,11 +6,11 @@ Komodo 2.3.4で管理するサーバーの構成。`komodo`ブランチを同期
 
 ## 変更を反映する
 
-1. `komodo/resources.toml`、`stacks/ocms/compose.yaml`、`stacks/management/`を編集する。
+1. `komodo/resources.toml`、`stacks/ocms/compose.yaml`、`stacks/management/`、`stacks/observability/`を編集する。
 2. `python3 scripts/check-config.py`と差分を確認して`komodo`ブランチにコミット・pushする。
 3. [Komodo](https://komodo.usbharu.dev)のProcedure `usbharu-lab-gitops`で実行結果を確認する。
 
-ProcedureはResource Sync `usbharu-lab`でリソース定義を同期する。設定変更があればこの段階でもデプロイする。続いてOCMS、管理用スタックの順に`DeployStackIfChanged`を実行する。GitHub Webhookは`komodo`ブランチのpushに反応する。5分ごとのスケジュールも同じProcedureを実行するため、Webhookの取りこぼしからも復帰できる。
+ProcedureはResource Sync `usbharu-lab`でリソース定義を同期する。Syncの段階ではデプロイせず、続いて監視、OCMS、管理用スタックの順に`DeployStackIfChanged`を実行する。監視ネットワークを先に作成するため、この順序を維持する。GitHub Webhookは`komodo`ブランチのpushに反応する。5分ごとのスケジュールも同じProcedureを実行するため、Webhookの取りこぼしからも復帰できる。
 
 Gitを設定の基準にするため、KomodoのUIで行った構成変更は次の同期で戻る。Secretの更新はUIで行う。Resource Syncの`managed`（UIからGitへ書き戻す機能）、リソースの自動削除、変数・ユーザーグループの同期は無効。
 
@@ -19,14 +19,15 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | 場所 | 内容 |
 | --- | --- |
 | `bootstrap/sync.toml` | 初回に手動設定するResource Sync。実行中のSync自身は同期対象にしない |
-| `komodo/resources.toml` | 2つのStack、GitOps用Procedure |
+| `komodo/resources.toml` | 3つのStack、GitOps用Procedure |
+| `stacks/observability/` | Alloy、Grafana Cloud送信、Ubuntu・Docker・Komodo・OCMSのダッシュボード。詳細は[監視の手順](stacks/observability/README.md) |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.6.0`と`ghcr.io/usbharu/ocms-runtime:v0.6.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.6.1`と`ghcr.io/usbharu/ocms-runtime:v0.6.1-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
 RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
 
@@ -76,6 +77,8 @@ Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホ�
 | `/etc/komodo/stacks/management/pocket.env` | Pocket IDの暗号鍵と設定 |
 | `/etc/komodo/stacks/management/.env` | MongoDB起動時の資格情報 |
 | `/etc/komodo/secrets/ocms/crypto.yaml` | 保存済みメディアの暗号鍵。Transferにのみマウント |
+| `/etc/komodo/secrets/observability/cloud.env` | Grafana Cloud OTLP接続情報と送信用トークン。Alloyにのみ渡す |
+| `/etc/komodo/secrets/observability/grafana-api-token` | ダッシュボード登録用。送信用トークンとは別で、Alloyには渡さない |
 | `/etc/cloudflared/token` | Cloudflare Tunnelのトークン |
 
 ホスト上の環境ファイルは権限600を維持する。暗号鍵は別途バックアップし、再セットアップ時も元の鍵を引き継ぐ。Komodoがclone先に生成する`.komodo.env`も秘密値を含むため、Gitには追加しない。
