@@ -25,10 +25,9 @@ def api(path,body=None):
   sys.exit('Grafana API failed: HTTP '+str(exc.code)+' at '+path)
 datasources=api('/api/datasources')
 selected={}
-for key,kind in [('metrics','prometheus'),('logs','loki'),('traces','tempo')]:
- options=[d for d in datasources if d['type']==kind]
- if not options: sys.exit('Missing Grafana data source type: '+kind)
- options.sort(key=lambda d:(not d.get('isDefault',False),'usbharulab' not in d['name'].lower(),d['name']))
+for key,kind,uid in [('metrics','prometheus','grafanacloud-prom'),('logs','loki','grafanacloud-logs'),('traces','tempo','grafanacloud-traces')]:
+ options=[d for d in datasources if d['type']==kind and d['uid']==uid]
+ if len(options)!=1: sys.exit('Missing Grafana Cloud data source: '+uid)
  selected[key]=options[0]
 for uid in ['usbharulab-infra','usbharulab-ocms']:
  dashboard=json.loads((args.directory/(uid+'.json')).read_text())
