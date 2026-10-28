@@ -1,0 +1,206 @@
+logging {
+  level = "warn"
+  format = "json"
+}
+
+// One Cloud OTLP credential for metrics, logs and traces. Never stored in Git.
+otelcol.auth.basic "cloud" {
+  username = sys.env("GRAFANA_CLOUD_INSTANCE_ID")
+  password = sys.env("GRAFANA_CLOUD_TOKEN")
+}
+otelcol.exporter.otlphttp "cloud" {
+  client {
+    endpoint = sys.env("GRAFANA_CLOUD_OTLP_ENDPOINT")
+    auth = otelcol.auth.basic.cloud.handler
+    compression = "gzip"
+  }
+  sending_queue {
+    enabled = true
+    num_consumers = 2
+    queue_size = 128
+  }
+  retry_on_failure {
+    enabled = true
+    initial_interval = "5s"
+    max_interval = "30s"
+    max_elapsed_time = "5m"
+  }
+}
+otelcol.processor.batch "cloud" {
+  timeout = "5s"
+  send_batch_size = 512
+  send_batch_max_size = 1024
+  output {
+    metrics = [otelcol.exporter.otlphttp.cloud.input]
+    logs = [otelcol.exporter.otlphttp.cloud.input]
+    traces = [otelcol.exporter.otlphttp.cloud.input]
+  }
+}
+otelcol.processor.transform "identity" {
+  error_mode = "ignore"
+  metric_statements {
+    context = "datapoint"
+    statements = [
+      `set(attributes["lab_host"], "ocms-ubuntu")`,
+      `set(resource.attributes["host.name"], "ocms-ubuntu")`,
+      `set(resource.attributes["service.namespace"], "usbharu-lab")`,
+    ]
+  }
+  log_statements {
+    context = "log"
+    statements = [
+      `set(resource.attributes["host.name"], "ocms-ubuntu")`,
+      `set(resource.attributes["service.namespace"], "usbharu-lab")`,
+      `set(resource.attributes["service.name"], attributes["service_name"]) where attributes["service_name"] != nil`,
+    ]
+  }
+  trace_statements {
+    context = "span"
+    statements = [
+      `set(resource.attributes["host.name"], "ocms-ubuntu")`,
+      `set(resource.attributes["service.namespace"], "usbharu-lab")`,
+    ]
+  }
+  output {
+    metrics = [otelcol.processor.batch.cloud.input]
+    logs = [otelcol.processor.batch.cloud.input]
+    traces = [otelcol.processor.batch.cloud.input]
+  }
+}
+otelcol.processor.memory_limiter "ingest" {
+  check_interval = "1s"
+  limit = "320MiB"
+  spike_limit = "64MiB"
+  output {
+    metrics = [otelcol.processor.transform.identity.input]
+    logs = [otelcol.processor.transform.identity.input]
+    traces = [otelcol.processor.transform.identity.input]
+  }
+}
+// Receiver is reachable only on the shared Docker telemetry network.
+otelcol.receiver.otlp "ocms" {
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    metrics = [otelcol.processor.memory_limiter.ingest.input]
+    logs = [otelcol.processor.memory_limiter.ingest.input]
+    traces = [otelcol.processor.memory_limiter.ingest.input]
+  }
+}
+
+prometheus.exporter.unix "host" {
+  rootfs_path = "/rootfs"
+  procfs_path = "/host/proc"
+  sysfs_path = "/sys"
+  set_collectors = ["cpu", "loadavg", "meminfo", "filesystem", "diskstats", "netdev", "pressure", "stat", "time", "uname"]
+  filesystem {
+    mount_points_exclude = "^/(dev|proc|sys|run|var/lib/docker/.+)($|/)"
+    fs_types_exclude = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|sysfs|tracefs)$"
+  }
+}
+prometheus.scrape "host" {
+  targets = prometheus.exporter.unix.host.targets
+  job_name = "integrations/node_exporter"
+  scrape_interval = "30s"
+  forward_to = [prometheus.relabel.host.receiver]
+}
+prometheus.relabel "host" {
+  rule {
+    target_label = "instance"
+    replacement = "ocms-ubuntu"
+  }
+  forward_to = [otelcol.receiver.prometheus.infrastructure.receiver]
+}
+prometheus.exporter.cadvisor "docker" {
+  docker_only = true
+  docker_host = "unix:///var/run/docker.sock"
+  store_container_labels = false
+  allowlisted_container_labels = ["com.docker.compose.project", "com.docker.compose.service"]
+  enabled_metrics = ["cpu", "memory", "network", "diskIO", "disk", "process"]
+  storage_duration = "2m"
+}
+prometheus.scrape "docker" {
+  targets = prometheus.exporter.cadvisor.docker.targets
+  job_name = "integrations/cadvisor"
+  scrape_interval = "30s"
+  forward_to = [prometheus.relabel.docker.receiver]
+}
+prometheus.relabel "docker" {
+  rule {
+    source_labels = ["name"]
+    regex = "/?(.*)"
+    target_label = "container"
+    replacement = "$1"
+  }
+  rule {
+    source_labels = ["container_label_com_docker_compose_project"]
+    target_label = "compose_project"
+  }
+  rule {
+    source_labels = ["container_label_com_docker_compose_service"]
+    target_label = "compose_service"
+  }
+  rule {
+    action = "labeldrop"
+    regex = "container_label_.*"
+  }
+  forward_to = [otelcol.receiver.prometheus.infrastructure.receiver]
+}
+prometheus.scrape "alloy" {
+  targets = [{"__address__" = "127.0.0.1:12345"}]
+  job_name = "alloy"
+  scrape_interval = "30s"
+  forward_to = [otelcol.receiver.prometheus.infrastructure.receiver]
+}
+otelcol.receiver.prometheus "infrastructure" {
+  output {
+    metrics = [otelcol.processor.memory_limiter.ingest.input]
+  }
+}
+
+// OCMS emits OTLP logs already. Only Komodo container logs are collected here.
+discovery.docker "komodo" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "30s"
+  filter {
+    name = "label"
+    values = ["com.docker.compose.project=ocms-management"]
+  }
+}
+discovery.relabel "komodo" {
+  targets = discovery.docker.komodo.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex = "core|periphery|mongo"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label = "service_name"
+    replacement = "komodo-$1"
+  }
+  rule {
+    target_label = "job"
+    replacement = "komodo"
+  }
+}
+loki.source.docker "komodo" {
+  host = "unix:///var/run/docker.sock"
+  targets = discovery.relabel.komodo.output
+  forward_to = [otelcol.receiver.loki.infrastructure.receiver]
+}
+loki.source.journal "docker" {
+  matches = "_SYSTEMD_UNIT=docker.service"
+  max_age = "1h"
+  labels = {
+    service_name = "docker",
+    job = "docker",
+  }
+  forward_to = [otelcol.receiver.loki.infrastructure.receiver]
+}
+otelcol.receiver.loki "infrastructure" {
+  output {
+    logs = [otelcol.processor.memory_limiter.ingest.input]
+  }
+}

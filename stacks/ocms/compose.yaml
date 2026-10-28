@@ -21,11 +21,12 @@ services:
       timeout: 3s
       retries: 20
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SERVICE: catalog
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
@@ -35,6 +36,9 @@ services:
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
+    networks:
+      default: {}
+      telemetry: {}
   transfer:
     image: ghcr.io/usbharu/ocms:v0.6.1
     pull_policy: missing
@@ -56,11 +60,12 @@ services:
       timeout: 3s
       retries: 20
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SERVICE: transfer
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_transfer:${TRANSFER_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
@@ -77,6 +82,9 @@ services:
       catalog:
         condition: service_healthy
     mem_limit: 128m
+    networks:
+      default: {}
+      telemetry: {}
   search:
     image: ghcr.io/usbharu/ocms:v0.6.1
     pull_policy: missing
@@ -98,11 +106,12 @@ services:
       timeout: 3s
       retries: 20
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SERVICE: search
       DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
       MEDIA_URL: http://worker:8080
@@ -117,10 +126,15 @@ services:
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
+    networks:
+      default: {}
+      telemetry: {}
   runtime:
     image: ghcr.io/usbharu/ocms-runtime:v0.6.1-cpu
     pull_policy: missing
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: '2'
@@ -143,6 +157,9 @@ services:
     mem_limit: 2g
     memswap_limit: 8g
     cpus: 1.5
+    networks:
+      default: {}
+      telemetry: {}
   worker:
     image: ghcr.io/usbharu/ocms:v0.6.1
     pull_policy: missing
@@ -164,11 +181,12 @@ services:
       timeout: 3s
       retries: 20
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SERVICE: worker
       DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
       TRANSFER_URL: http://transfer:8080
@@ -192,6 +210,9 @@ services:
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     memswap_limit: 3072m
+    networks:
+      default: {}
+      telemetry: {}
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
@@ -215,11 +236,12 @@ services:
       timeout: 3s
       retries: 20
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SERVICE: bff
       TRANSFER_URL: http://transfer:8080
       SEARCH_URL: http://search:8080
@@ -238,6 +260,7 @@ services:
         condition: service_healthy
     mem_limit: 128m
     networks:
+      telemetry: {}
       default: {}
       edge:
         aliases:
@@ -283,8 +306,9 @@ services:
     security_opt:
     - no-new-privileges:true
     environment:
+      DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
     tmpfs:
@@ -302,9 +326,15 @@ services:
     mem_limit: 256m
     memswap_limit: 512m
     cpus: 0.5
+    networks:
+      default: {}
+      telemetry: {}
 volumes:
   models: {}
 networks:
   edge:
     external: true
     name: ocms-edge
+  telemetry:
+    external: true
+    name: ocms-telemetry
