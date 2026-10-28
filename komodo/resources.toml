@@ -3,8 +3,8 @@
 name = "ocms"
 description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images and tracked database migrations."
 tags = ["usbharu-lab"]
-# Sync deploys configuration changes; the procedure also checks Compose file changes.
-deploy = true
+# The procedure deploys stacks in dependency order after Sync updates definitions.
+deploy = false
 [stack.config]
 server = "ocms-ubuntu"
 repo = "usbharu/usbharu-lab"
@@ -33,7 +33,7 @@ extra_args = ["--wait", "--wait-timeout", "300"]
 name = "ocms-management"
 description = "Komodo, Pocket ID and Traefik; credentials and state stay on the host."
 tags = ["usbharu-lab"]
-deploy = true
+deploy = false
 [stack.config]
 server = "ocms-ubuntu"
 repo = "usbharu/usbharu-lab"
@@ -47,6 +47,32 @@ config_files = [{ path = "traefik/routes.yaml", services = ["traefik"], requires
 project_name = "ocms-management"
 env_file_path = ".komodo.env"
 additional_env_files = [{ path = "/etc/komodo/stacks/management/.env", track = false }]
+auto_pull = false
+run_build = false
+poll_for_updates = false
+auto_update = false
+destroy_before_deploy = false
+webhook_enabled = false
+extra_args = ["--wait", "--wait-timeout", "300"]
+
+[[stack]]
+name = "ocms-observability"
+description = "Grafana Alloy: Ubuntu and Docker metrics, Komodo/Docker logs, OCMS OTLP to Grafana Cloud."
+tags = ["usbharu-lab"]
+deploy = false
+[stack.config]
+server = "ocms-ubuntu"
+repo = "usbharu/usbharu-lab"
+branch = "komodo"
+git_provider = "github.com"
+files_on_host = false
+clone_path = "/etc/komodo/gitops/observability"
+run_directory = "stacks/observability"
+file_paths = ["compose.yaml"]
+config_files = [{ path = "alloy/config.alloy", services = ["alloy"], requires = "Restart" }]
+project_name = "ocms-observability"
+env_file_path = ".komodo.env"
+additional_env_files = [{ path = "/etc/komodo/secrets/observability/cloud.env", track = false }]
 auto_pull = false
 run_build = false
 poll_for_updates = false
@@ -70,6 +96,9 @@ webhook_enabled = true
 [[procedure.config.stage]]
 name = "Sync resource definitions"
 executions = [{ execution.type = "RunSync", execution.params.sync = "usbharu-lab" }]
+[[procedure.config.stage]]
+name = "Deploy observability if changed"
+executions = [{ execution.type = "DeployStackIfChanged", execution.params.stack = "ocms-observability" }]
 [[procedure.config.stage]]
 name = "Deploy OCMS if changed"
 executions = [{ execution.type = "DeployStackIfChanged", execution.params.stack = "ocms" }]
