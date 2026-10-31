@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -40,7 +40,7 @@ services:
       default: {}
       telemetry: {}
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -86,7 +86,7 @@ services:
       default: {}
       telemetry: {}
   search:
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -130,7 +130,7 @@ services:
       default: {}
       telemetry: {}
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.8.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.9.0-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
@@ -161,7 +161,7 @@ services:
       default: {}
       telemetry: {}
   worker:
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -216,7 +216,7 @@ services:
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -266,7 +266,7 @@ services:
         aliases:
         - ocms-bff
   migrate:
-    image: ghcr.io/usbharu/ocms:v0.8.0
+    image: ghcr.io/usbharu/ocms:v0.9.0
     pull_policy: missing
     restart: 'no'
     user: ${OCMS_MIGRATE_UID:?Configure host postgres uid}:${OCMS_MIGRATE_GID:?Configure host postgres gid}
@@ -289,7 +289,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   recommender:
-    image: ghcr.io/usbharu/ocms-runtime:v0.8.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.9.0-cpu
     command:
     - uvicorn
     - recommendation_server:app
