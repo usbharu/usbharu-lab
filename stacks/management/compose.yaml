@@ -48,7 +48,7 @@ services:
       - /proc:/proc
       - /etc/komodo:/etc/komodo
   pocket-id:
-    image: ghcr.io/pocket-id/pocket-id:v2.19.1
+    image: ghcr.io/pocket-id/pocket-id:v2.19.2
     restart: unless-stopped
     mem_limit: 192m
     env_file: /etc/komodo/stacks/management/pocket.env
