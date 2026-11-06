@@ -7,13 +7,17 @@ Grafana Alloy v1.21.2 collects this Ubuntu host and sends metrics, logs and trac
 | Source | Collected data |
 | --- | --- |
 | Ubuntu | CPU, load, pressure, memory, swap, filesystems, disk I/O and network, every 30 seconds |
-| Docker containers | CPU, throttling, memory, network, disk I/O and process metrics, including Komodo and OCMS |
+| Docker containers | CPU, throttling, and memory working set, including Komodo and OCMS |
 | Komodo | Core, Periphery and MongoDB stdout/stderr, collected through Docker |
 | Docker daemon | `docker.service` journal; only entries from the last hour on first startup |
 | OCMS | Native OTLP/HTTP metrics, logs and traces from Go services, Runtime and recommender |
-| Alloy | Collector health and exporter metrics, every 30 seconds |
+| Alloy | Scrape health and OTLP exporter delivery and failure counters, every 30 seconds |
 
 OCMS stdout is deliberately excluded from Docker log collection to avoid duplicating its OTLP logs. Pocket ID, Traefik, other application logs and system journals other than Docker are excluded. Docker metrics do include all containers. Environment variable values and arbitrary container labels are not collected; only Compose project/service labels are retained. No host file contents or private media are scraped.
+
+Infrastructure scrapes forward the metric families used by the dashboards, scrape health, and OTLP exporter delivery counters. This applies to Ubuntu, cAdvisor and Alloy self-metrics. OCMS application metrics and logs keep their existing pipeline.
+
+Alloy drops successful HTTP 204 POST spans from the Worker client when the destination is Catalog, and the corresponding class of Catalog server spans. The application does not export the request path, so this filter also covers other Catalog 204 POSTs such as event acknowledgments. Error spans and other HTTP statuses still pass through.
 
 `ocms-telemetry` is an internal Docker network. OTLP port 4318 is not published on the host. Alloy's health/metrics UI is available only through `127.0.0.1:12345`; use an SSH tunnel for remote access. Alloy also has an egress network for HTTPS to Grafana Cloud.
 

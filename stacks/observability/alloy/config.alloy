@@ -64,6 +64,20 @@ otelcol.processor.transform "identity" {
   output {
     metrics = [otelcol.processor.batch.cloud.input]
     logs = [otelcol.processor.batch.cloud.input]
+    traces = [otelcol.processor.filter.ocms_trace_volume.input]
+  }
+}
+// Successful Worker-to-Catalog updates dominate the trace stream. Match the
+// exported service, span, method and status since these spans omit the route.
+otelcol.processor.filter "ocms_trace_volume" {
+  error_mode = "ignore"
+  traces {
+    span = [
+      `resource.attributes["service.name"] == "worker" and name == "http.client" and attributes["server.address"] == "catalog" and attributes["http.request.method"] == "POST" and attributes["http.response.status_code"] == 204 and status.code != STATUS_CODE_ERROR`,
+      `resource.attributes["service.name"] == "catalog" and name == "catalog.http_request" and attributes["http.request.method"] == "POST" and attributes["http.response.status_code"] == 204 and status.code != STATUS_CODE_ERROR`,
+    ]
+  }
+  output {
     traces = [otelcol.processor.batch.cloud.input]
   }
 }
@@ -107,6 +121,11 @@ prometheus.scrape "host" {
 }
 prometheus.relabel "host" {
   rule {
+    source_labels = ["__name__"]
+    action = "keep"
+    regex = "node_cpu_seconds_total|node_memory_(MemAvailable|MemTotal|SwapTotal|SwapFree)_bytes|node_filesystem_(avail|size)_bytes|node_pressure_(cpu|io|memory)_waiting_seconds_total|node_load1|node_disk_(read|written)_bytes_total|node_network_receive_bytes_total|up"
+  }
+  rule {
     target_label = "instance"
     replacement = "ocms-ubuntu"
   }
@@ -127,6 +146,11 @@ prometheus.scrape "docker" {
   forward_to = [prometheus.relabel.docker.receiver]
 }
 prometheus.relabel "docker" {
+  rule {
+    source_labels = ["__name__"]
+    action = "keep"
+    regex = "container_cpu_(usage_seconds|cfs_throttled_periods|cfs_periods)_total|container_memory_working_set_bytes|up"
+  }
   rule {
     source_labels = ["name"]
     regex = "/?(.*)"
@@ -151,6 +175,14 @@ prometheus.scrape "alloy" {
   targets = [{"__address__" = "127.0.0.1:12345"}]
   job_name = "alloy"
   scrape_interval = "30s"
+  forward_to = [prometheus.relabel.alloy.receiver]
+}
+prometheus.relabel "alloy" {
+  rule {
+    source_labels = ["__name__"]
+    action = "keep"
+    regex = "otelcol_exporter_(sent|send_failed|enqueue_failed)_(metric_points|log_records|spans)(_total)?|up"
+  }
   forward_to = [otelcol.receiver.prometheus.infrastructure.receiver]
 }
 otelcol.receiver.prometheus "infrastructure" {
