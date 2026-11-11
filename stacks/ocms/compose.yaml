@@ -30,6 +30,8 @@ services:
       SERVICE: catalog
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+    ports:
+    - 10.0.0.1:18081:8080
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -75,6 +77,8 @@ services:
       S3_SECRET_KEY: ${R2_SECRET_ACCESS_KEY:?Configure R2 credentials}
       S3_TLS: 'true'
       S3_BUCKET: ocms-data
+    ports:
+    - 10.0.0.1:18082:8080
     volumes:
     - /var/run/postgresql:/var/run/postgresql:ro
     - /etc/komodo/secrets/ocms/crypto.yaml:/run/secrets/crypto.yaml:ro
@@ -118,6 +122,8 @@ services:
       RUNTIME_URL: http://runtime:8080
       SEMANTIC_SEARCH_ENABLED: false
       RECOMMENDATION_URL: http://recommender:8080
+    ports:
+    - 10.0.0.1:18083:8080
     depends_on:
       catalog:
         condition: service_healthy
@@ -139,6 +145,8 @@ services:
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: '2'
       WEB_CONCURRENCY: '1'
+    ports:
+    - 10.0.0.1:18084:8080
     volumes:
     - models:/models
     tmpfs:
