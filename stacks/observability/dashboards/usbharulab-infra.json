@@ -820,8 +820,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by(__name__) (increase({__name__=~\"otelcol_exporter_send_failed_(metric_points|log_records|spans)(_total)?\",lab_host=\"ocms-ubuntu\"}[5m]))",
-          "legendFormat": "{{__name__}}",
+          "expr": "label_replace(increase(otelcol_exporter_send_failed_metric_points_total{lab_host=\"ocms-ubuntu\"}[5m]), \"signal\", \"metrics\", \"\", \"\") or label_replace(increase(otelcol_exporter_send_failed_log_records_total{lab_host=\"ocms-ubuntu\"}[5m]), \"signal\", \"logs\", \"\", \"\") or label_replace(increase(otelcol_exporter_send_failed_spans_total{lab_host=\"ocms-ubuntu\"}[5m]), \"signal\", \"traces\", \"\", \"\")",
+          "legendFormat": "{{signal}}",
           "range": true,
           "instant": false
         }
