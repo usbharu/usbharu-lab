@@ -45,7 +45,8 @@ PVE/VM journald ── OTLP 4317 ───────────────�
 
 ## ocms-ubuntu からのメトリクス
 
-ocms-ubuntu は自宅 LAN 上にないため、pve2 との間に WireGuard を張っている。
+ocms-ubuntu は PVE のゲストではなく外部 VPS。自宅 LAN 上にないため、pve2 との間に
+WireGuard を張っている。pve2 はトンネルの入口と LGTM への転送だけを担う。
 
 | 項目 | 値 |
 | --- | --- |
