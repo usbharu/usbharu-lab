@@ -52,14 +52,15 @@ ocms-ubuntu は自宅 LAN 上にないため、pve2 との間に WireGuard を�
 | ocms-ubuntu `wg0` | `10.0.0.1/24`（既存の VPN ハブ） |
 | pve2 `wg0` | `10.0.0.3/32` |
 | VPS 側の経路 | `192.168.1.240/32` を `wg0` 経由 |
-| pve2 側 | IPv4 forwarding を有効化し、`10.0.0.0/24` を `vmbr0` へ MASQUERADE |
+| pve2 側 | IPv4 forwarding を有効化し、`10.0.0.1` → `192.168.1.240` だけを `vmbr0` へ MASQUERADE |
 | 送信先 | `http://192.168.1.240:4318`（LXC 200 の OTel Collector） |
 
 設定例は `examples/wireguard-pve2.conf` と `examples/wireguard-vps-peer.conf`。
 秘密鍵は各ホストの `/etc/wireguard/` に 0600 で置き、Git には入れない。
 
 pve2 では `/etc/sysctl.d/99-wireguard-forward.conf` に `net.ipv4.ip_forward = 1` を設定する。
-`wg-quick@wg0` の PostUp が FORWARD と MASQUERADE を追加するため、再起動後も経路が復元される。
+`wg-quick@wg0` の PostUp が、VPS (`10.0.0.1`) から LGTM (`192.168.1.240`) への通信だけを
+許可する FORWARD と MASQUERADE を追加するため、再起動後も経路が復元される。
 
 疎通確認:
 
