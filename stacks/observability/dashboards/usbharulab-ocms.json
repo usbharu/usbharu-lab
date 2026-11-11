@@ -66,6 +66,39 @@
           "text": "All",
           "value": "$__all"
         }
+      },
+      {
+        "name": "worker",
+        "label": "Worker",
+        "type": "custom",
+        "query": "All : .*, VPS (ocms-ubuntu) : ocms-ubuntu, VM110 (ocms-worker-vm110) : ocms-worker-vm110",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": ".*"
+          },
+          {
+            "selected": false,
+            "text": "VPS (ocms-ubuntu)",
+            "value": "ocms-ubuntu"
+          },
+          {
+            "selected": false,
+            "text": "VM110 (ocms-worker-vm110)",
+            "value": "ocms-worker-vm110"
+          }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "refresh": 0,
+        "skipUrlSync": false
       }
     ]
   },
@@ -644,7 +677,7 @@
     },
     {
       "id": 11,
-      "title": "Workerログ",
+      "title": "Workerログ（$worker）",
       "type": "logs",
       "datasource": {
         "type": "loki",
@@ -656,12 +689,12 @@
         "w": 24,
         "h": 10
       },
-      "description": "",
+      "description": "pve-lgtm では VM110 worker、Grafana Cloud では VPS worker のログを表示。Worker 変数で切り替える。",
       "targets": [
         {
           "refId": "A",
-          "expr": "{service_namespace=\"usbharu-lab\",service_name=\"worker\"}",
-          "legendFormat": "{{service_name}}",
+          "expr": "{service_namespace=\"usbharu-lab\",service_name=\"worker\"} | host_name=~\"$worker\"",
+          "legendFormat": "{{host_name}}",
           "range": true,
           "instant": false
         }

@@ -88,6 +88,8 @@ The two dashboard JSON files use datasource variables for Prometheus, Loki and T
 - `usbharulab-infra.json`: Ubuntu saturation, container CPU/memory/throttling, Komodo load, Docker journal/Komodo logs, Alloy exporter failures.
 - `usbharulab-ocms.json`: HTTP throughput/5xx/p95, completed/failed jobs, processing duration, transfers, container CPU, logs and slow traces.
 
+`usbharulab-ocms.json` has a `Worker` variable to switch the log panel between `All`, `VPS (ocms-ubuntu)` and `VM110 (ocms-worker-vm110)`. The pve-lgtm Loki contains the VM110 worker logs, while the Grafana Cloud Loki contains the VPS worker logs.
+
 Metrics use `lab_host="ocms-ubuntu"` for the VPS worker and `lab_host="ocms-worker-vm110"` for the PVE worker. Media job panels include both. Metrics select OCMS services with the Prometheus `job` label (`usbharu-lab/<service>`); logs and traces use the resource namespace `usbharu-lab` and the `service_name` label. OCMS does not expose a queue-length gauge, so these dashboards do not invent one. The job counter records completed attempts and final failures/retries according to the app, and is not an exact DB backlog count. Runtime operations and Go HTTP handling expose different instrumentation; HTTP panels use the Go histogram. Existing application code reports a fixed `service.version`, so use container images to identify deployed releases.
 
 The same JSON files are provisioned into the PVE LGTM Grafana. There, select the `mimir`, `loki`, and `tempo` datasources. The publish helper still targets Grafana Cloud only; the pve-lgtm copies are copied manually as described in `pve-lgtm/README.md`.
