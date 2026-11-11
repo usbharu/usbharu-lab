@@ -335,8 +335,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * rate({__name__=~\"node_pressure_(cpu|io|memory)_waiting_seconds_total\",lab_host=\"ocms-ubuntu\"}[$__rate_interval])",
-          "legendFormat": "{{__name__}}",
+          "expr": "label_replace(100 * rate(node_pressure_cpu_waiting_seconds_total{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"type\", \"cpu\", \"\", \"\") or label_replace(100 * rate(node_pressure_io_waiting_seconds_total{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"type\", \"io\", \"\", \"\") or label_replace(100 * rate(node_pressure_memory_waiting_seconds_total{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"type\", \"memory\", \"\", \"\")",
+          "legendFormat": "{{type}}",
           "range": true,
           "instant": false
         }
