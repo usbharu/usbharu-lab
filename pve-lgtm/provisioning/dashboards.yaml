@@ -20,3 +20,13 @@ providers:
     allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards/usbharu-lab
+
+  - name: LGTM
+    orgId: 1
+    folder: LGTM
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/lgtm

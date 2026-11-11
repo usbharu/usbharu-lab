@@ -88,9 +88,10 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
 | `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
+| `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM 自身のデータ量、ログ、トレース、Grafana レイテンシ、コンポーネント資源 |
 
-PVE 用の3つは Grafana の `PVE` フォルダ、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`
-フォルダにプロビジョニングする。
+PVE 用の3つは `PVE`、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`、LGTM 自身は
+`LGTM` フォルダにプロビジョニングする。
 
 ### 変数の意味
 
@@ -141,7 +142,7 @@ ssh root@192.168.1.250 '
 ## プロビジョニング
 
 Grafana のデータソース UID は `mimir`、`loki`、`tempo`。ダッシュボードは
-UID を固定し、`provider.yaml` で PVE と usbharu-lab の2フォルダに分けて読み込む。
+UID を固定し、`provider.yaml` で PVE、usbharu-lab、LGTM の3フォルダに分けて読み込む。
 
 ライブ環境は LXC 200 の `/opt/lgtm`:
 
@@ -149,11 +150,12 @@ UID を固定し、`provider.yaml` で PVE と usbharu-lab の2フォルダに�
 - `/opt/lgtm/config/grafana/provisioning/dashboards/provider.yaml`
 - `/opt/lgtm/config/grafana/provisioning/dashboards/pve/*.json`
 - `/opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/*.json`
+- `/opt/lgtm/config/grafana/provisioning/dashboards/lgtm/*.json`
 - `/opt/lgtm/config/otel-collector.yaml`
 
 このリポジトリの JSON はバックアップと差分管理用。反映するときは PVE ホスト経由で
-LXC にコピーし、Grafana を再起動する。PVE 用の3つは `pve/`、ocms-ubuntu 用の2つは
-`usbharu-lab/` に置く。
+LXC にコピーし、Grafana を再起動する。PVE 用の3つは `pve/`、oCIS と ocms-ubuntu 用の
+3つは `usbharu-lab/`、LGTM 用の1つは `lgtm/` に置く。
 
 ```sh
 scp pve-lgtm/dashboards/*.json root@192.168.1.250:/tmp/
@@ -162,6 +164,7 @@ ssh root@192.168.1.250 '
     pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/pve/$f.json --perms 644
   done
   pct push 200 /tmp/ocis.json /opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/ocis.json --perms 644
+  pct push 200 /tmp/lgtm.json /opt/lgtm/config/grafana/provisioning/dashboards/lgtm/lgtm.json --perms 644
   pct exec 200 -- bash -c "cd /opt/lgtm && docker compose restart grafana"
 '
 ```
@@ -248,6 +251,23 @@ Komodo 管理の `stacks/observability/` が動かす Alloy が、Ubuntu ホス�
 OCMS のメトリクスを OTLP/HTTP で `192.168.1.240:4318` に送る。
 Alloy の設定は `stacks/observability/alloy/config.alloy`。ログとトレースは
 Grafana Cloud に送るため、pve-lgtm にはメトリクスだけが届く。
+
+### LGTM スタック
+
+中央 Collector が Mimir、Loki、Tempo、Grafana、OTel Collector 自身の `/metrics` を
+30秒ごとにスクレイプし、Mimir に保存する。`lgtm` ダッシュボードでは次を見られる。
+
+- シリーズ数が多いメトリクス Top 20
+- Active series、samples/s、series 作成数
+- ログ行数・転送量、ログ量の多い service
+- Tempo の spans/s・転送量
+- Grafana の handler 別リクエスト数・p95、`/api/ds/query` p95、5xx 率
+- Mimir / Loki / Tempo の query p95（route 別）
+- コンポーネントの CPU・メモリ、OTel Collector の queue・送信失敗
+
+自己監視のスクレイプ設定は `examples/central-collector.yaml` の `prometheus/lgtm`。
+Grafana 13.2.6 の `/metrics` にはデータソース別のレイテンシが出ないため、
+Grafana の遅さは handler 別 p95 と `/api/ds/query` の p95 を代理指標にしている。
 
 ## ログ収集
 
@@ -356,3 +376,7 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - oCIS のトレースを Tempo で取得（`proxy`、`gateway` などのサービス名）
 - `ocis` ダッシュボードを Grafana の `usbharu-lab` フォルダにロードし、
   メトリクス・ログ・トレースのパネルを確認
+- `up{job=~"mimir|loki|tempo|grafana|otelcol"}` がすべて1
+- `lgtm` ダッシュボードを Grafana の `LGTM` フォルダにロード
+- シリーズ数 Top 20、Grafana handler 別 p95、Mimir / Loki / Tempo の query p95 が
+  データを返すことを確認

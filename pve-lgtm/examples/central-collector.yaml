@@ -49,6 +49,56 @@ receivers:
             - source_labels: [vm]
               target_label: instance
 
+  # LGTM stack self-monitoring. Keep only the series used by the LGTM dashboard.
+  prometheus/lgtm:
+    config:
+      scrape_configs:
+        - job_name: mimir
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['mimir:9009']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'cortex_(ingester_memory_series|ingester_memory_series_created_total|distributor_received_samples_total|ingester_received_samples_total|distributor_ingestion_rate_samples_per_second|querier_request_duration_seconds_(bucket|count)|query_frontend_.*|compactor_.*)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              action: keep
+        - job_name: loki
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['loki:3100']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'loki_(distributor_bytes_received_total|distributor_lines_received_total|ingester_memory_streams|ingester_bytes_received_total|request_duration_seconds_(bucket|count)|logql_query_duration_seconds_(bucket|count)|ingester_chunks_created_total)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              action: keep
+        - job_name: tempo
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['tempo:3200']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'tempo_(distributor_spans_received_total|distributor_bytes_received_total|request_duration_seconds_(bucket|count)|query_frontend_.*|ingester_.*)|tempodb_.*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              action: keep
+        - job_name: grafana
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['grafana:3000']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'grafana_(http_request_duration_seconds_(bucket|count)|http_request_in_flight|http_response_size_bytes|api_dataproxy_request_all_milliseconds|stat_active_users|stat_totals_dashboard|stat_totals_datasource|stat_total_users)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              action: keep
+        - job_name: otelcol
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['127.0.0.1:8888']
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: 'otelcol_(receiver_accepted|receiver_refused|exporter_sent|exporter_send_failed|exporter_enqueue_failed|exporter_queue|processor_batch|processor_memory_limiter|process_).*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              action: keep
+
 processors:
   memory_limiter:
     check_interval: 1s
@@ -69,10 +119,20 @@ exporters:
       insecure: true
 
 service:
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 8888
+                without_units: true
   extensions: [health_check]
   pipelines:
     metrics:
-      receivers: [otlp, prometheus/pve, prometheus/vms]
+      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
       processors: [memory_limiter, batch]
       exporters: [otlphttp/mimir]
     logs:
