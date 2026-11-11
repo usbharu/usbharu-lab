@@ -57,6 +57,7 @@ ocms-ubuntu は自宅 LAN 上にないため、pve2 との間に WireGuard を�
 
 設定例は `examples/wireguard-pve2.conf` と `examples/wireguard-vps-peer.conf`。
 秘密鍵は各ホストの `/etc/wireguard/` に 0600 で置き、Git には入れない。
+両ホストで `systemctl enable --now wg-quick@wg0` を実行し、サービスとして管理する。
 
 pve2 では `/etc/sysctl.d/99-wireguard-forward.conf` に `net.ipv4.ip_forward = 1` を設定する。
 `wg-quick@wg0` の PostUp が、VPS (`10.0.0.1`) から LGTM (`192.168.1.240`) への通信だけを
