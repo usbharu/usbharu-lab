@@ -203,6 +203,8 @@ oCIS はコンテナ内の `127.0.0.1:9205/metrics` に Prometheus メトリク�
 名前空間からスクレイプして pve-lgtm に OTLP/HTTP で送る。9205 は LAN に公開しない。
 
 - 設定例: `examples/ocis-metrics-collector.yaml`
+- ライブ設定: `/home/ubuntu/ocis/ocis-metrics-collector.yaml` と
+  `/home/ubuntu/ocis/compose.override.yaml`
 - 送信先: `http://192.168.1.240:4318`
 - ラベル: `job="ocis"`、`instance="ocis"`
 - 主なメトリクス: `ocis_proxy_requests_total`、`ocis_proxy_errors_total`、
