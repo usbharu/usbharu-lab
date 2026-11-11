@@ -1,0 +1,58 @@
+# OTel Collector sidecar for oCIS on VM101 (ocis).
+# oCIS exposes Prometheus metrics on 127.0.0.1:9205 inside the container.
+# Run this collector with network_mode: "service:ocis" so it can scrape that
+# loopback address without publishing port 9205 on the LAN.
+#
+# Compose override:
+#   services:
+#     ocis-metrics:
+#       image: otel/opentelemetry-collector-contrib:0.165.0
+#       container_name: ocis-metrics
+#       restart: unless-stopped
+#       network_mode: "service:ocis"
+#       command: ["--config=/etc/otelcol-contrib/config.yaml"]
+#       volumes:
+#         - ./ocis-metrics-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+#       depends_on:
+#         - ocis
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: ocis
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          metrics_path: /metrics
+          static_configs:
+            - targets: ["127.0.0.1:9205"]
+          metric_relabel_configs:
+            - target_label: instance
+              replacement: ocis
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 128
+    spike_limit_mib: 32
+  resource:
+    attributes:
+      - key: service.name
+        value: ocis
+        action: upsert
+      - key: host.name
+        value: ocis
+        action: upsert
+  batch:
+    timeout: 5s
+    send_batch_size: 4096
+
+exporters:
+  otlp_http/pve_lgtm:
+    endpoint: http://192.168.1.240:4318
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp_http/pve_lgtm]

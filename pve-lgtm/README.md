@@ -15,7 +15,7 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared |
 | PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
-| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald） |
+| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald）、oCIS metrics sidecar |
 | ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクスを WireGuard 経由で LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32` |
 | PVE pve3（192.168.1.76） | 現在停止中。ダッシュボードにはオフラインとして表示される |
@@ -28,6 +28,7 @@ LXC 200 内の cloudflared で動かし、`http://grafana:3000` に転送して�
 
 ```
 ocms-ubuntu Alloy ── WireGuard ── OTLP 4318 ─┐
+VM101 oCIS metrics (sidecar) ── OTLP 4318 ───┤
 PVE pve2 :9221 (pve-exporter) ───────────────┤
 VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector (LXC 200) ─┬─ Mimir (metrics)
 PVE/VM journald ── OTLP 4317 ────────────────┘                              ├─ Loki  (logs)
@@ -86,9 +87,10 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/proxmox-ve.json` | `proxmox-ve` | `mimir` | `node` = `pve2` / `pve3` | PVE クラスタ、ノード、VM/LXC、ストレージ、SMART、センサー |
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
+| `dashboards/ocis.json` | `ocis` | `mimir` | `metrics`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ |
 
-PVE 用の3つは Grafana の `PVE` フォルダ、ocms-ubuntu 用の2つは `usbharu-lab` フォルダに
-プロビジョニングする。
+PVE 用の3つは Grafana の `PVE` フォルダ、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`
+フォルダにプロビジョニングする。
 
 ### 変数の意味
 
@@ -158,6 +160,7 @@ ssh root@192.168.1.250 '
   for f in proxmox-ve node-exporter-full journal-logs; do
     pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/pve/$f.json --perms 644
   done
+  pct push 200 /tmp/ocis.json /opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/ocis.json --perms 644
   pct exec 200 -- bash -c "cd /opt/lgtm && docker compose restart grafana"
 '
 ```
@@ -192,6 +195,20 @@ Ubuntu 24.04 の `prometheus-node-exporter` パッケージを使う。
 1860 の systemd パネルも表示できるようにしている。
 LXC 200 の OTel Collector が `:9100` を 30秒ごとにスクレイプする。
 例: `examples/central-collector.yaml`
+
+### VM101: oCIS
+
+oCIS はコンテナ内の `127.0.0.1:9205/metrics` に Prometheus メトリクスを出す。
+`ocis-metrics` サイドカーを `network_mode: "service:ocis"` で動かし、同じネットワーク
+名前空間からスクレイプして pve-lgtm に OTLP/HTTP で送る。9205 は LAN に公開しない。
+
+- 設定例: `examples/ocis-metrics-collector.yaml`
+- 送信先: `http://192.168.1.240:4318`
+- ラベル: `job="ocis"`、`instance="ocis"`
+- 主なメトリクス: `ocis_proxy_requests_total`、`ocis_proxy_errors_total`、
+  `ocis_proxy_duration_seconds`、`ocis_ocdav_http_requests_total`、
+  `reva_upload_active`、`reva_download_active`
+- ダッシュボード: `dashboards/ocis.json`（Grafana の `usbharu-lab` フォルダ）
 
 ### ocms-ubuntu: Alloy
 
@@ -298,3 +315,7 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - ocms-ubuntu の Alloy から WireGuard 経由で `up{instance="ocms-ubuntu"}`、
   Ubuntu/Docker メトリクス、OCMS の HTTP/Job/転送メトリクスを Mimir で取得
 - `usbharulab-infra` / `usbharulab-ocms` の主要クエリが pve-lgtm の Mimir でデータを返す
+- oCIS の `ocis_proxy_requests_total`、`ocis_proxy_errors_total`、
+  `ocis_proxy_duration_seconds`、`ocis_frontend_http_requests_total`、
+  `ocis_ocdav_http_requests_total`、`reva_upload_active`、`process_*` を Mimir で取得
+- `ocis` ダッシュボードを Grafana の `usbharu-lab` フォルダにロード
