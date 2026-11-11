@@ -786,6 +786,142 @@
           }
         ]
       }
+    },
+    {
+      "id": 14,
+      "title": "Worker別 Job累計",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${metrics}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 58,
+        "w": 12,
+        "h": 8
+      },
+      "description": "VPS worker (ocms-ubuntu) と PVE VM110 worker (ocms-worker-vm110) の累計完了Job",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(lab_host, job_type, outcome) (media_job_completed{lab_host=~\"ocms-ubuntu|ocms-worker-vm110\"})",
+          "legendFormat": "{{lab_host}} · {{job_type}} · {{outcome}}",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "spanNulls": false,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Worker別 Job累計（現在）",
+      "type": "table",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${metrics}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 58,
+        "w": 12,
+        "h": 8
+      },
+      "description": "現在の累計完了Jobを worker / job_type / outcome 別に表示",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(lab_host, job_type, outcome) (media_job_completed{lab_host=~\"ocms-ubuntu|ocms-worker-vm110\"})",
+          "format": "table",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "lab_host": "Worker",
+              "job_type": "Job type",
+              "outcome": "Outcome",
+              "Value": "Count"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "VM110 worker ログ",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 66,
+        "w": 24,
+        "h": 10
+      },
+      "description": "pve-lgtm のみ。VM110 worker の media.job_started / media.pdf_page_completed などを表示",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"worker\"} | host_name=\"ocms-worker-vm110\"",
+          "legendFormat": "{{host_name}}",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
     }
   ]
 }
