@@ -133,6 +133,12 @@ processors:
 exporters:
   otlphttp/mimir:
     endpoint: http://mimir:9009/otlp
+    # Preserve sample order; multiple consumers can make Mimir reject
+    # cumulative counters as out-of-order.
+    sending_queue:
+      enabled: true
+      num_consumers: 1
+      queue_size: 1000
   otlphttp/loki:
     endpoint: http://loki:3100/otlp
   otlp/tempo:

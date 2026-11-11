@@ -17,7 +17,8 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
 | VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
 | ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクスを WireGuard 経由で LXC 200 へ送る |
-| WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32` |
+| VM110 `ocms-worker`（192.168.1.53） | OCMS remote worker/runtime。OTLP を LXC 200 へ送る |
+| WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32`、VM110 `10.0.0.4/32` |
 | PVE pve3（192.168.1.76） | 現在停止中。ダッシュボードにはオフラインとして表示される |
 
 公開 Grafana は `https://grafana.usbharu.dev`。Cloudflare Tunnel `lgtm-grafana` を
@@ -28,6 +29,7 @@ LXC 200 内の cloudflared で動かし、`http://grafana:3000` に転送して�
 
 ```
 ocms-ubuntu Alloy ── WireGuard ── OTLP 4318 ─┐
+VM110 ocms-worker ── OTLP 4318 ──────────────┤
 VM101 oCIS metrics (sidecar) ── OTLP 4318 ───┤
 PVE pve2 :9221 (pve-exporter) ───────────────┤
 VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector (LXC 200) ─┬─ Mimir (metrics)

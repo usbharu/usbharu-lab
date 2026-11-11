@@ -180,6 +180,10 @@ worker/runtime は OTLP を pve-lgtm に直接送る。pve-lgtm の中央 Collec
 - Loki: `{service_name="worker"} | host_name="ocms-worker-pve"`
 - Tempo: `{ resource.service.name = "worker" }`
 
+pve-lgtm の Mimir exporter は `sending_queue.num_consumers: 1` にしている。
+複数 consumer で cumulative counter を送ると、Mimir が out-of-order として
+サンプルを落とすことがあるため。
+
 `usbharulab-ocms` ダッシュボードの Job 系パネルは `ocms-ubuntu` と
 `ocms-worker-pve` の両方を表示する。コンテナ CPU など VM110 側の cAdvisor は
 収集していないため、そのパネルは VPS のみになる。
