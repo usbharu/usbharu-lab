@@ -96,7 +96,7 @@ receivers:
             - targets: ['127.0.0.1:8888']
           metric_relabel_configs:
             - source_labels: [__name__]
-              regex: 'otelcol_(receiver_accepted|receiver_refused|exporter_sent|exporter_send_failed|exporter_enqueue_failed|exporter_queue|processor_batch|processor_memory_limiter|process_).*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              regex: 'otelcol_.*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
               action: keep
 
 processors:

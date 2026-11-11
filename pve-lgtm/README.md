@@ -89,9 +89,17 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
 | `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
 | `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM 自身のデータ量、ログ、トレース、Grafana レイテンシ、コンポーネント資源 |
+| `dashboards/opentelemetry-collector.json` | `BKf2sowmj` | `mimir` | `datasource` / `job` など | OpenTelemetry Collector 公式ダッシュボード（Grafana.com 15983） |
 
 PVE 用の3つは `PVE`、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`、LGTM 自身は
 `LGTM` フォルダにプロビジョニングする。
+
+LGTM フォルダには、自作の `LGTM Stack` と、Grafana.com の公式
+`OpenTelemetry Collector`（ID 15983）を置いている。LGTM 全体のデータ量と
+Grafana の遅さは自作側、Collector の receiver/processor/exporter 詳細は公式側で見る。
+コミュニティの `LGTM Stats`（ID 25700）は Kubernetes の `cluster` / `namespace` /
+`job` ラベルと Mimir/Loki/Tempo mixin の recording rules を前提にしており、
+この単一ノード構成では大半が No data になるため採用していない。
 
 ### 変数の意味
 
@@ -165,6 +173,7 @@ ssh root@192.168.1.250 '
   done
   pct push 200 /tmp/ocis.json /opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/ocis.json --perms 644
   pct push 200 /tmp/lgtm.json /opt/lgtm/config/grafana/provisioning/dashboards/lgtm/lgtm.json --perms 644
+  pct push 200 /tmp/opentelemetry-collector.json /opt/lgtm/config/grafana/provisioning/dashboards/lgtm/opentelemetry-collector.json --perms 644
   pct exec 200 -- bash -c "cd /opt/lgtm && docker compose restart grafana"
 '
 ```
@@ -266,6 +275,8 @@ Grafana Cloud に送るため、pve-lgtm にはメトリクスだけが届く。
 - コンポーネントの CPU・メモリ、OTel Collector の queue・送信失敗
 
 自己監視のスクレイプ設定は `examples/central-collector.yaml` の `prometheus/lgtm`。
+Collector の receiver/processor/exporter 詳細は、Grafana.com の公式
+`OpenTelemetry Collector` ダッシュボード（ID 15983）で見る。
 Grafana 13.2.6 の `/metrics` にはデータソース別のレイテンシが出ないため、
 Grafana の遅さは handler 別 p95 と `/api/ds/query` の p95 を代理指標にしている。
 
@@ -380,3 +391,7 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - `lgtm` ダッシュボードを Grafana の `LGTM` フォルダにロード
 - シリーズ数 Top 20、Grafana handler 別 p95、Mimir / Loki / Tempo の query p95 が
   データを返すことを確認
+- Grafana.com 公式の `OpenTelemetry Collector` ダッシュボード（15983）を
+  `LGTM` フォルダにロード
+- `otelcol_process_uptime`、`otelcol_processor_incoming_items`、
+  `otelcol_exporter_sent_metric_points` を Mimir で取得
