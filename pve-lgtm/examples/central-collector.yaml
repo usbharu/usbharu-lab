@@ -60,7 +60,7 @@ receivers:
             - targets: ['mimir:9009']
           metric_relabel_configs:
             - source_labels: [__name__]
-              regex: 'cortex_(ingester_memory_series|ingester_memory_series_created_total|distributor_received_samples_total|ingester_received_samples_total|distributor_ingestion_rate_samples_per_second|querier_request_duration_seconds_(bucket|count)|query_frontend_.*|compactor_.*)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              regex: 'cortex_(ingester_memory_series|ingester_memory_series_created_total|distributor_received_samples_total|ingester_received_samples_total|distributor_ingestion_rate_samples_per_second|querier_request_duration_seconds_(bucket|count)|query_frontend_.*|compactor_.*|build_info)|mimir_build_info|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
               action: keep
         - job_name: loki
           scrape_interval: 30s
@@ -69,7 +69,7 @@ receivers:
             - targets: ['loki:3100']
           metric_relabel_configs:
             - source_labels: [__name__]
-              regex: 'loki_(distributor_bytes_received_total|distributor_lines_received_total|ingester_memory_streams|ingester_bytes_received_total|request_duration_seconds_(bucket|count)|logql_query_duration_seconds_(bucket|count)|ingester_chunks_created_total)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              regex: 'loki_(distributor_bytes_received_total|distributor_lines_received_total|ingester_memory_streams|ingester_bytes_received_total|ingester_chunk_stored_bytes_total|request_duration_seconds_(bucket|count)|logql_query_duration_seconds_(bucket|count)|ingester_chunks_created_total|build_info)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
               action: keep
         - job_name: tempo
           scrape_interval: 30s
@@ -78,7 +78,7 @@ receivers:
             - targets: ['tempo:3200']
           metric_relabel_configs:
             - source_labels: [__name__]
-              regex: 'tempo_(distributor_spans_received_total|distributor_bytes_received_total|request_duration_seconds_(bucket|count)|query_frontend_.*|ingester_.*)|tempodb_.*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              regex: 'tempo_(distributor_spans_received_total|distributor_bytes_received_total|request_duration_seconds_(bucket|count)|query_frontend_.*|ingester_.*|build_info)|tempodb_.*|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
               action: keep
         - job_name: grafana
           scrape_interval: 30s
@@ -87,7 +87,7 @@ receivers:
             - targets: ['grafana:3000']
           metric_relabel_configs:
             - source_labels: [__name__]
-              regex: 'grafana_(http_request_duration_seconds_(bucket|count)|http_request_in_flight|http_response_size_bytes|api_dataproxy_request_all_milliseconds|stat_active_users|stat_totals_dashboard|stat_totals_datasource|stat_total_users)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
+              regex: 'grafana_(http_request_duration_seconds_(bucket|count)|http_request_in_flight|http_response_size_bytes|api_dataproxy_request_all_milliseconds|stat_active_users|stat_totals_dashboard|stat_totals_datasource|stat_total_users|stat_total_orgs|stat_total_playlists|build_info|alerting_alerts)|process_(cpu_seconds_total|resident_memory_bytes|open_fds)|up'
               action: keep
         - job_name: otelcol
           scrape_interval: 30s

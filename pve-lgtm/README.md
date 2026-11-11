@@ -88,7 +88,7 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
 | `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
-| `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM 自身のデータ量、ログ、トレース、Grafana レイテンシ、コンポーネント資源 |
+| `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM のデータ量、バージョン、テナント、ストレージ、Grafana レイテンシ、遅い handler/route、コンポーネント資源 |
 | `dashboards/opentelemetry-collector.json` | `BKf2sowmj` | `mimir` | `datasource` / `job` など | OpenTelemetry Collector 公式ダッシュボード（Grafana.com 15983） |
 
 PVE 用の3つは `PVE`、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`、LGTM 自身は
@@ -99,7 +99,8 @@ LGTM フォルダには、自作の `LGTM Stack` と、Grafana.com の公式
 Grafana の遅さは自作側、Collector の receiver/processor/exporter 詳細は公式側で見る。
 コミュニティの `LGTM Stats`（ID 25700）は Kubernetes の `cluster` / `namespace` /
 `job` ラベルと Mimir/Loki/Tempo mixin の recording rules を前提にしており、
-この単一ノード構成では大半が No data になるため採用していない。
+この単一ノード構成では大半が No data になるため採用していない。ただし、
+バージョン・テナント数・保存量・遅い処理の見せ方は自作ダッシュボードに取り込んでいる。
 
 ### 変数の意味
 
@@ -273,6 +274,10 @@ Grafana Cloud に送るため、pve-lgtm にはメトリクスだけが届く。
 - Grafana の handler 別リクエスト数・p95、`/api/ds/query` p95、5xx 率
 - Mimir / Loki / Tempo の query p95（route 別）
 - コンポーネントの CPU・メモリ、OTel Collector の queue・送信失敗
+- コンポーネントのバージョン
+- テナント数、Grafana の Org・ユーザー・ダッシュボード・データソース数
+- Loki / Tempo の保存量、Mimir compactor の最終成功・失敗
+- 遅い Grafana handler / Mimir・Loki・Tempo route の Top 10 テーブル
 
 自己監視のスクレイプ設定は `examples/central-collector.yaml` の `prometheus/lgtm`。
 Collector の receiver/processor/exporter 詳細は、Grafana.com の公式
