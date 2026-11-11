@@ -101,7 +101,8 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 - `usbharulab-ocms.json`: OCMS の HTTP、Job、コンテナ、ログ、トレース
 
 この2つは `pve-lgtm/dashboards/` には複製せず、`stacks/observability/dashboards/` を
-唯一の管理元にする。LXC へは次のようにコピーする。
+唯一の管理元にする。ocms-ubuntu のログとトレースは Grafana Cloud に残しているため、
+pve-lgtm 側ではメトリクス以外のパネルは空になる。LXC へは次のようにコピーする。
 
 ```sh
 scp stacks/observability/dashboards/usbharulab-infra.json \
@@ -278,10 +279,14 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 
 2026-11-11 時点で、以下を確認している。
 
-- 3ダッシュボードが Grafana にロードされ、UID とパネルが一致する
+- 5ダッシュボード（PVE、Node Exporter Full、Journal、Ubuntu/Docker、OCMS）が
+  Grafana にロードされ、UID とパネルが一致する
 - `https://grafana.usbharu.dev/login` が 200、Pocket ID リダイレクトが 302
 - PVE の `pve_node_up`、`pve_vm_status`、`pve_storage_used_fraction`、
   `pve_disk_health_status`、`pve_sensor_temperature_celsius` を Mimir で取得
 - `picoclaw` / `ocis` の `node_cpu_seconds_total`、`node_memory_*`、
   `node_filesystem_*`、`node_systemd_unit_state` を Mimir で取得
 - PVE ホスト、VM100、VM101 の journal とカーネルログを Loki で取得
+- ocms-ubuntu の Alloy から WireGuard 経由で `up{instance="ocms-ubuntu"}`、
+  Ubuntu/Docker メトリクス、OCMS の HTTP/Job/転送メトリクスを Mimir で取得
+- `usbharulab-infra` / `usbharulab-ocms` の主要クエリが pve-lgtm の Mimir でデータを返す
