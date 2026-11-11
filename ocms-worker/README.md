@@ -138,7 +138,7 @@ ports:
 
 VPS の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
 `INTERNAL_TOKEN` を取り、VM110 の `/opt/ocms-worker/.env` に 0600 で置く。
-値は Git にコミットしない。
+値は Git にコミットしない。テンプレートは `env.example`。
 
 ```sh
 scp compose.yaml ubuntu@192.168.1.53:/opt/ocms-worker/
