@@ -25,13 +25,24 @@ processors:
         value: <HOST_NAME>
         action: upsert
   # Optional: Docker's journald log driver keeps the container name in the
-  # journal body. Route one container to its own service_name.
+  # journal body. Route one container to its own service_name, replace the
+  # journal wrapper with the container message, and drop repetitive noise.
   transform/docker:
     error_mode: ignore
     log_statements:
       - context: log
         statements:
           - set(resource.attributes["service.name"], "ocis") where body["CONTAINER_NAME"] == "ocis"
+          - set(body, body["MESSAGE"]) where body["CONTAINER_NAME"] == "ocis"
+  filter/docker_noise:
+    error_mode: ignore
+    log_conditions:
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"message\":\"user .* authenticated\".*")'
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"message\":\"listing public shares\".*")'
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"message\":\"list public share\".*")'
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"message\":\"skipping auth check for: /app/list\".*")'
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"path\":\"/status.php\".*")'
+      - 'resource.attributes["service.name"] == "ocis" and IsMatch(log.body, ".*\"path\":\"/ocs/v2.php/cloud/capabilities\".*")'
   batch:
     timeout: 5s
     send_batch_size: 4096
@@ -46,5 +57,5 @@ service:
   pipelines:
     logs:
       receivers: [journald]
-      processors: [memory_limiter, resource, transform/docker, batch]
+      processors: [memory_limiter, resource, transform/docker, filter/docker_noise, batch]
       exporters: [otlp]

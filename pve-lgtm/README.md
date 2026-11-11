@@ -220,7 +220,13 @@ oCIS コンテナは Docker の `journald` ログドライバで動かす。ホ�
 `service.name=ocis` に変換して Loki へ送る。Loki では `{service_name="ocis"}` で
 検索でき、`journal-logs` ダッシュボードの `source` に `ocis` を追加している。
 
-ホスト側の設定は `examples/vm-otelcol.yaml` の `transform/docker` を参照する。
+ログ本文は journald の長いラッパーではなく、oCIS が出力した JSON メッセージに
+置き換える。また、`user ... authenticated`、`listing public shares`、
+`list public share`、`/status.php`、`/ocs/v2.php/cloud/capabilities` などの
+定型ノイズは Collector の `filter/docker_noise` で落とす。
+
+ホスト側の設定は `examples/vm-otelcol.yaml` の `transform/docker` と
+`filter/docker_noise` を参照する。
 
 #### oCIS トレース
 
