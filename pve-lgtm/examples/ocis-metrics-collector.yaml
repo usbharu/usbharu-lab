@@ -1,5 +1,7 @@
 # OTel Collector sidecar for oCIS on VM101 (ocis).
 # oCIS exposes Prometheus metrics on 127.0.0.1:9205 inside the container.
+# Logs use the host journald receiver (Docker journald log driver), and traces
+# are exported directly by oCIS via OCIS_TRACING_*; this sidecar is metrics-only.
 # Run this collector with network_mode: "service:ocis" so it can scrape that
 # loopback address without publishing port 9205 on the LAN.
 #

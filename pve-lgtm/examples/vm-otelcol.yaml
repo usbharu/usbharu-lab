@@ -24,6 +24,14 @@ processors:
       - key: host.name
         value: <HOST_NAME>
         action: upsert
+  # Optional: Docker's journald log driver keeps the container name in the
+  # journal body. Route one container to its own service_name.
+  transform/docker:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(resource.attributes["service.name"], "ocis") where body["CONTAINER_NAME"] == "ocis"
   batch:
     timeout: 5s
     send_batch_size: 4096
@@ -38,5 +46,5 @@ service:
   pipelines:
     logs:
       receivers: [journald]
-      processors: [memory_limiter, resource, batch]
+      processors: [memory_limiter, resource, transform/docker, batch]
       exporters: [otlp]

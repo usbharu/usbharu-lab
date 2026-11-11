@@ -30,6 +30,34 @@
         "regex": "",
         "skipUrlSync": false,
         "options": []
+      },
+      {
+        "name": "logs",
+        "label": "Logs",
+        "type": "datasource",
+        "query": "loki",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "options": []
+      },
+      {
+        "name": "traces",
+        "label": "Traces",
+        "type": "datasource",
+        "query": "tempo",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "options": []
       }
     ]
   },
@@ -756,6 +784,89 @@
           "mode": "multi",
           "sort": "desc"
         }
+      }
+    },
+    {
+      "id": 15,
+      "title": "oCIS ログ",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 24,
+        "h": 10
+      },
+      "description": "Docker journald 経由の oCIS コンテナログ",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"ocis\"}",
+          "legendFormat": "{{service_name}}",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 16,
+      "title": "遅いリクエストのトレース",
+      "type": "table",
+      "datasource": {
+        "type": "tempo",
+        "uid": "${traces}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 24,
+        "h": 10
+      },
+      "description": "oCIS の TraceQL。100ms 超のトレースを表示",
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ duration > 100ms }",
+          "limit": 30,
+          "tableType": "traces"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^(Trace ID|traceID)$"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Trace を開く",
+                    "url": "/explore?left={%22datasource%22%3A%22${traces}%22%2C%22queries%22%3A%5B{%22refId%22%3A%22A%22%2C%22queryType%22%3A%22traceId%22%2C%22query%22%3A%22${__value.raw}%22}%5D%2C%22range%22%3A{%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     }
   ]

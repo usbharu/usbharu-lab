@@ -15,7 +15,7 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared |
 | PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
-| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald）、oCIS metrics sidecar |
+| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
 | ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクスを WireGuard 経由で LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32` |
 | PVE pve3（192.168.1.76） | 現在停止中。ダッシュボードにはオフラインとして表示される |
@@ -31,8 +31,8 @@ ocms-ubuntu Alloy ── WireGuard ── OTLP 4318 ─┐
 VM101 oCIS metrics (sidecar) ── OTLP 4318 ───┤
 PVE pve2 :9221 (pve-exporter) ───────────────┤
 VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector (LXC 200) ─┬─ Mimir (metrics)
-PVE/VM journald ── OTLP 4317 ────────────────┘                              ├─ Loki  (logs)
-                                                                            └─ Tempo (traces)
+VM101 oCIS traces ── OTLP 4317 ──────────────┤                              ├─ Loki  (logs)
+PVE/VM journald ── OTLP 4317 ────────────────┘                              └─ Tempo (traces)
                                                                                 │
                                                                             Grafana
 ```
@@ -87,7 +87,7 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/proxmox-ve.json` | `proxmox-ve` | `mimir` | `node` = `pve2` / `pve3` | PVE クラスタ、ノード、VM/LXC、ストレージ、SMART、センサー |
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
-| `dashboards/ocis.json` | `ocis` | `mimir` | `metrics`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ |
+| `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
 
 PVE 用の3つは Grafana の `PVE` フォルダ、oCIS と ocms-ubuntu 用の3つは `usbharu-lab`
 フォルダにプロビジョニングする。
@@ -98,6 +98,7 @@ PVE 用の3つは Grafana の `PVE` フォルダ、oCIS と ocms-ubuntu 用の3�
 - **Linux - Node Exporter Full の `node`** は VM の `instance`（`picoclaw` / `ocis`）。
   `job` は `node` 固定。VM を切り替えるとその VM の Linux 内部メトリクスだけが見える。
 - **Journal & Kernel Logs の `source`** は Loki の `service_name` の生値。
+  `ocis` を選ぶと oCIS コンテナのログだけを表示する。
   カーネルログは `{service_name="$source"} | json | _TRANSPORT="kernel"` で絞り込む。
 
 ### ocms-ubuntu のダッシュボード
@@ -212,6 +213,29 @@ oCIS はコンテナ内の `127.0.0.1:9205/metrics` に Prometheus メトリク�
   `reva_upload_active`、`reva_download_active`
 - ダッシュボード: `dashboards/ocis.json`（Grafana の `usbharu-lab` フォルダ）
 
+#### oCIS ログ
+
+oCIS コンテナは Docker の `journald` ログドライバで動かす。ホストの
+`otelcol-contrib` が journal を読み、`CONTAINER_NAME=ocis` のエントリだけを
+`service.name=ocis` に変換して Loki へ送る。Loki では `{service_name="ocis"}` で
+検索でき、`journal-logs` ダッシュボードの `source` に `ocis` を追加している。
+
+ホスト側の設定は `examples/vm-otelcol.yaml` の `transform/docker` を参照する。
+
+#### oCIS トレース
+
+oCIS の OTLP トレースを LXC 200 の OTel Collector に直接送る。
+
+```dotenv
+OCIS_TRACING_ENABLED=true
+OCIS_TRACING_TYPE=otlp
+OCIS_TRACING_ENDPOINT=192.168.1.240:4317
+```
+
+トレースは Tempo に保存され、`oCIS` ダッシュボードの「遅いリクエストのトレース」
+パネル（`{ duration > 100ms }`）から確認できる。サービス名は `proxy`、`gateway`、
+`storage-users` など oCIS の内部サービス名になる。
+
 ### ocms-ubuntu: Alloy
 
 Komodo 管理の `stacks/observability/` が動かす Alloy が、Ubuntu ホスト、Docker コンテナ、
@@ -223,6 +247,8 @@ Grafana Cloud に送るため、pve-lgtm にはメトリクスだけが届く。
 
 PVE ホストと VM で `otelcol-contrib` の `journald` receiver を使う。
 `units` は指定せず、全 journal（カーネル含む）を `priority: info` で送る。
+oCIS コンテナのログは Docker の `journald` ログドライバ経由で同じ journal に入り、
+`CONTAINER_NAME=ocis` のエントリは `service.name=ocis` として Loki に送られる。
 
 - PVE ホストの設定例: `examples/pve-host-otelcol.yaml`
 - VM の設定例: `examples/vm-otelcol.yaml`（`<VM_NAME>` / `<HOST_NAME>` を置換）
@@ -320,4 +346,7 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - oCIS の `ocis_proxy_requests_total`、`ocis_proxy_errors_total`、
   `ocis_proxy_duration_seconds`、`ocis_frontend_http_requests_total`、
   `ocis_ocdav_http_requests_total`、`reva_upload_active`、`process_*` を Mimir で取得
-- `ocis` ダッシュボードを Grafana の `usbharu-lab` フォルダにロード
+- oCIS コンテナログを Loki の `{service_name="ocis"}` で取得
+- oCIS のトレースを Tempo で取得（`proxy`、`gateway` などのサービス名）
+- `ocis` ダッシュボードを Grafana の `usbharu-lab` フォルダにロードし、
+  メトリクス・ログ・トレースのパネルを確認
