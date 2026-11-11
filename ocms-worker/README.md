@@ -140,6 +140,10 @@ VPS の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
 `INTERNAL_TOKEN` を取り、VM110 の `/opt/ocms-worker/.env` に 0600 で置く。
 値は Git にコミットしない。テンプレートは `env.example`。
 
+`ocms-worker/compose.yaml` の image タグは、VPS の `stacks/ocms/compose.yaml` と
+必ず揃える。VPS のデプロイ完了前に新しい worker を起動すると、内部 API の
+バージョン不一致で `PROCESSING_FAILED` になる。
+
 ```sh
 scp compose.yaml ubuntu@192.168.1.53:/opt/ocms-worker/
 scp .env ubuntu@192.168.1.53:/opt/ocms-worker/
