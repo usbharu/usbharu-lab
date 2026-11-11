@@ -173,11 +173,11 @@ job_type セレクタ（例: `MEDIA_WORKER_JOB_TYPES`）を追加するコード
 ## 監視
 
 worker/runtime は OTLP を pve-lgtm に直接送る。pve-lgtm の中央 Collector が
-`service.name=worker` に `host.name=ocms-worker-pve` と
+`service.name=worker` に `host.name=ocms-worker-vm110` と
 `service.namespace=usbharu-lab` を付ける。
 
-- Mimir: `media_job_completed{lab_host="ocms-worker-pve"}`
-- Loki: `{service_name="worker"} | host_name="ocms-worker-pve"`
+- Mimir: `media_job_completed{lab_host="ocms-worker-vm110"}`
+- Loki: `{service_name="worker"} | host_name="ocms-worker-vm110"`
 - Tempo: `{ resource.service.name = "worker" }`
 
 pve-lgtm の Mimir exporter は `sending_queue.num_consumers: 1` にしている。
@@ -185,5 +185,5 @@ pve-lgtm の Mimir exporter は `sending_queue.num_consumers: 1` にしている
 サンプルを落とすことがあるため。
 
 `usbharulab-ocms` ダッシュボードの Job 系パネルは `ocms-ubuntu` と
-`ocms-worker-pve` の両方を表示する。コンテナ CPU など VM110 側の cAdvisor は
+`ocms-worker-vm110` の両方を表示する。コンテナ CPU など VM110 側の cAdvisor は
 収集していないため、そのパネルは VPS のみになる。

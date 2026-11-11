@@ -111,21 +111,21 @@ processors:
     metric_statements:
       - context: resource
         statements:
-          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
-          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker" and attributes["service.namespace"] == nil
+          - set(attributes["host.name"], "ocms-worker-vm110") where attributes["service.name"] == "worker" and attributes["service.namespace"] == "usbharu-lab" and attributes["host.name"] == nil
       - context: datapoint
         statements:
-          - set(attributes["lab_host"], "ocms-worker-pve") where resource.attributes["service.name"] == "worker"
+          - set(attributes["lab_host"], "ocms-worker-vm110") where resource.attributes["service.name"] == "worker" and resource.attributes["service.namespace"] == "usbharu-lab" and attributes["lab_host"] == nil
     log_statements:
       - context: resource
         statements:
-          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
-          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker" and attributes["service.namespace"] == nil
+          - set(attributes["host.name"], "ocms-worker-vm110") where attributes["service.name"] == "worker" and attributes["service.namespace"] == "usbharu-lab" and attributes["host.name"] == nil
     trace_statements:
       - context: resource
         statements:
-          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
-          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker" and attributes["service.namespace"] == nil
+          - set(attributes["host.name"], "ocms-worker-vm110") where attributes["service.name"] == "worker" and attributes["service.namespace"] == "usbharu-lab" and attributes["host.name"] == nil
   batch:
     timeout: 5s
     send_batch_size: 8192
