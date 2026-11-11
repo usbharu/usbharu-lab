@@ -25,6 +25,8 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
+`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
+
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
 OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.6.1`と`ghcr.io/usbharu/ocms-runtime:v0.6.1-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。

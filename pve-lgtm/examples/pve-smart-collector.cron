@@ -1,0 +1,11 @@
+# SMART data for pve-exporter. The script is from bigtcze/pve-exporter and
+# writes /var/lib/pve-exporter/smart.json for the exporter to read.
+#
+# Install:
+#   install -m 0755 pve-smart-collector.sh /usr/local/bin/
+#   install -d -m 0755 /var/lib/pve-exporter
+#   install -m 0644 pve-smart-collector.cron /etc/cron.d/pve-smart-collector
+#
+# The script uses hostname -s so the SMART node label matches the Proxmox
+# API node name (for example pve2, not pve2.example.internal).
+*/5 * * * * root /usr/local/bin/pve-smart-collector.sh

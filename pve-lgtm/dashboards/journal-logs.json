@@ -1,0 +1,76 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Journal — $source",
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"refId": "A", "expr": "{service_name=\"$source\"}", "queryType": "range"}
+      ],
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "detailsMode": "inline"
+      },
+      "fieldConfig": {"defaults": {}, "overrides": []}
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "Kernel — $source",
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 12},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {"refId": "A", "expr": "{service_name=\"$source\"} | json | _TRANSPORT=\"kernel\"", "queryType": "range"}
+      ],
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "detailsMode": "inline"
+      },
+      "fieldConfig": {"defaults": {}, "overrides": []}
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["logs", "journal", "kernel"],
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "label": "Source",
+        "type": "custom",
+        "query": "pve2-journald,vm100-journald,vm101-journald",
+        "current": {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
+        "options": [
+          {"selected": false, "text": "pve2-journald", "value": "pve2-journald"},
+          {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
+          {"selected": false, "text": "vm101-journald", "value": "vm101-journald"}
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Journal & Kernel Logs",
+  "uid": "journal-logs",
+  "version": 2
+}

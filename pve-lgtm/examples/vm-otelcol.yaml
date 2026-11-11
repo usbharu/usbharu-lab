@@ -1,0 +1,42 @@
+# OTel Collector inside a Linux VM.
+# Replace <VM_NAME> and <HOST_NAME>. The service name becomes the Loki
+# service_name label used by the Journal & Kernel Logs dashboard.
+#
+# Install: otelcol-contrib 0.165.0 .deb, add the otelcol-contrib user to the
+# systemd-journal group, write this file to /etc/otelcol-contrib/config.yaml,
+# then: systemctl enable --now otelcol-contrib
+receivers:
+  journald:
+    directory: /var/log/journal
+    start_at: end
+    priority: info
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 128
+    spike_limit_mib: 32
+  resource:
+    attributes:
+      - key: service.name
+        value: <VM_NAME>-journald
+        action: upsert
+      - key: host.name
+        value: <HOST_NAME>
+        action: upsert
+  batch:
+    timeout: 5s
+    send_batch_size: 4096
+
+exporters:
+  otlp:
+    endpoint: 192.168.1.240:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    logs:
+      receivers: [journald]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp]

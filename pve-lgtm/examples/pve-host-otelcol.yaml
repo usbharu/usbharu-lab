@@ -1,0 +1,66 @@
+# OTel Collector on PVE host pve2.
+# Collects hostmetrics and all journald entries (including kernel), then sends
+# them to the central collector in LXC 200 at 192.168.1.240:4317.
+#
+# Install: otelcol-contrib 0.165.0 .deb, add the otelcol-contrib user to the
+# systemd-journal group, write this file to /etc/otelcol-contrib/config.yaml,
+# then: systemctl enable --now otelcol-contrib
+receivers:
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      paging:
+      processes:
+
+  # No units list: collect the complete journal, including kernel messages.
+  journald:
+    directory: /var/log/journal
+    start_at: end
+    priority: info
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  resourcedetection:
+    detectors: [system]
+    system:
+      hostname_sources: [os]
+    override: false
+  resource/metrics:
+    attributes:
+      - key: service.name
+        value: pve2-hostmetrics
+        action: upsert
+  resource/logs:
+    attributes:
+      - key: service.name
+        value: pve2-journald
+        action: upsert
+  batch:
+    timeout: 5s
+    send_batch_size: 8192
+
+exporters:
+  otlp:
+    endpoint: 192.168.1.240:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [memory_limiter, resourcedetection, resource/metrics, batch]
+      exporters: [otlp]
+    logs:
+      receivers: [journald]
+      processors: [memory_limiter, resourcedetection, resource/logs, batch]
+      exporters: [otlp]

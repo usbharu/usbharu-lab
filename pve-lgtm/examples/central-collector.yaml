@@ -1,0 +1,84 @@
+# Central OTel Collector in LXC 200 (lgtm).
+# Receives OTLP from the PVE host and VMs, scrapes pve-exporter and node_exporter,
+# then writes metrics to Mimir, logs to Loki, and traces to Tempo.
+#
+# Replace the target addresses and vm/vmid labels when hosts change.
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Go pve-exporter on the PVE host. Collection takes about 20 seconds,
+  # so the scrape timeout is longer than the default 10 seconds.
+  prometheus/pve:
+    config:
+      scrape_configs:
+        - job_name: pve
+          scrape_interval: 60s
+          scrape_timeout: 50s
+          metrics_path: /metrics
+          static_configs:
+            - targets: ['192.168.1.250:9221']
+
+  # node_exporter inside the VMs. The instance label is normalized to the
+  # guest hostname so the Node Exporter Full dashboard can select a VM by name.
+  prometheus/vms:
+    config:
+      scrape_configs:
+        - job_name: node
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['192.168.1.78:9100']
+              labels:
+                vm: picoclaw
+                vmid: "100"
+            - targets: ['192.168.1.52:9100']
+              labels:
+                vm: ocis
+                vmid: "101"
+          metric_relabel_configs:
+            - source_labels: [vm]
+              target_label: instance
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 768
+    spike_limit_mib: 128
+  batch:
+    timeout: 5s
+    send_batch_size: 8192
+
+exporters:
+  otlphttp/mimir:
+    endpoint: http://mimir:9009/otlp
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+service:
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp, prometheus/pve, prometheus/vms]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/mimir]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/loki]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo]

@@ -1,0 +1,18 @@
+# Go pve-exporter (bigtcze/pve-exporter) on PVE host pve2.
+# The token needs PVEAuditor on / and privilege separation disabled,
+# or explicit ACLs on the token.
+#
+# Install the binary to /usr/local/bin/pve-exporter, write this file to
+# /etc/pve-exporter/config.yml as root:pve-exporter 0640, then start the
+# systemd unit.
+proxmox:
+  host: "192.168.1.250"
+  port: 8006
+  token_id: "monitoring@pve!pve-exporter"
+  token_secret: "REPLACE_WITH_PVE_TOKEN_SECRET"
+  insecure_skip_verify: true
+  timeout: 30s
+
+server:
+  listen_address: ":9221"
+  metrics_path: "/metrics"
