@@ -3,7 +3,7 @@ logging {
   format = "json"
 }
 
-// One Cloud OTLP credential for metrics, logs and traces. Never stored in Git.
+// Cloud OTLP credentials are still used for logs and traces. Never stored in Git.
 otelcol.auth.basic "cloud" {
   username = sys.env("GRAFANA_CLOUD_INSTANCE_ID")
   password = sys.env("GRAFANA_CLOUD_TOKEN")
@@ -26,14 +26,41 @@ otelcol.exporter.otlphttp "cloud" {
     max_elapsed_time = "5m"
   }
 }
+// Metrics go to the local PVE LGTM stack over the WireGuard link between
+// ocms-ubuntu (10.0.0.1) and pve2 (10.0.0.3). The endpoint is the OTLP/HTTP
+// receiver of the central collector in LXC 200 (192.168.1.240).
+otelcol.exporter.otlphttp "pve_lgtm" {
+  client {
+    endpoint = "http://192.168.1.240:4318"
+    compression = "gzip"
+  }
+  sending_queue {
+    enabled = true
+    num_consumers = 2
+    queue_size = 128
+  }
+  retry_on_failure {
+    enabled = true
+    initial_interval = "5s"
+    max_interval = "30s"
+    max_elapsed_time = "5m"
+  }
+}
 otelcol.processor.batch "cloud" {
   timeout = "5s"
   send_batch_size = 512
   send_batch_max_size = 1024
   output {
-    metrics = [otelcol.exporter.otlphttp.cloud.input]
     logs = [otelcol.exporter.otlphttp.cloud.input]
     traces = [otelcol.exporter.otlphttp.cloud.input]
+  }
+}
+otelcol.processor.batch "pve_lgtm" {
+  timeout = "5s"
+  send_batch_size = 512
+  send_batch_max_size = 1024
+  output {
+    metrics = [otelcol.exporter.otlphttp.pve_lgtm.input]
   }
 }
 otelcol.processor.transform "identity" {
@@ -62,7 +89,7 @@ otelcol.processor.transform "identity" {
     ]
   }
   output {
-    metrics = [otelcol.processor.batch.cloud.input]
+    metrics = [otelcol.processor.batch.pve_lgtm.input]
     logs = [otelcol.processor.batch.cloud.input]
     traces = [otelcol.processor.filter.ocms_trace_volume.input]
   }

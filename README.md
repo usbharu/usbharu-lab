@@ -20,12 +20,12 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | --- | --- |
 | `bootstrap/sync.toml` | 初回に手動設定するResource Sync。実行中のSync自身は同期対象にしない |
 | `komodo/resources.toml` | 3つのStack、GitOps用Procedure |
-| `stacks/observability/` | Alloy、Grafana Cloud送信、Ubuntu・Docker・Komodo・OCMSのダッシュボード。詳細は[監視の手順](stacks/observability/README.md) |
+| `stacks/observability/` | Alloy、PVE LGTMへのメトリクス送信、Grafana Cloudへのログ・トレース送信、Ubuntu・Docker・Komodo・OCMSのダッシュボード。詳細は[監視の手順](stacks/observability/README.md) |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用 |
 
-`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
+`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。`ocms-ubuntu`とpve2の間はWireGuardで接続し、AlloyのメトリクスだけをこのLGTMへ送る。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
 
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
@@ -79,7 +79,7 @@ Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホ�
 | `/etc/komodo/stacks/management/pocket.env` | Pocket IDの暗号鍵と設定 |
 | `/etc/komodo/stacks/management/.env` | MongoDB起動時の資格情報 |
 | `/etc/komodo/secrets/ocms/crypto.yaml` | 保存済みメディアの暗号鍵。Transferにのみマウント |
-| `/etc/komodo/secrets/observability/cloud.env` | Grafana Cloud OTLP接続情報と送信用トークン。Alloyにのみ渡す |
+| `/etc/komodo/secrets/observability/cloud.env` | Grafana Cloud OTLP接続情報と送信用トークン（ログ・トレース用）。Alloyにのみ渡す |
 | `/etc/komodo/secrets/observability/grafana-api-token` | ダッシュボード登録用。送信用トークンとは別で、Alloyには渡さない |
 | `/etc/cloudflared/token` | Cloudflare Tunnelのトークン |
 

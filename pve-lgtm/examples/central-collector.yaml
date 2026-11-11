@@ -1,6 +1,7 @@
 # Central OTel Collector in LXC 200 (lgtm).
-# Receives OTLP from the PVE host and VMs, scrapes pve-exporter and node_exporter,
-# then writes metrics to Mimir, logs to Loki, and traces to Tempo.
+# Receives OTLP from the PVE host, VMs, and ocms-ubuntu (metrics over WireGuard),
+# scrapes pve-exporter and node_exporter, then writes metrics to Mimir, logs to
+# Loki, and traces to Tempo.
 #
 # Replace the target addresses and vm/vmid labels when hosts change.
 extensions:

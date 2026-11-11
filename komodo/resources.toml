@@ -57,7 +57,7 @@ extra_args = ["--wait", "--wait-timeout", "300"]
 
 [[stack]]
 name = "ocms-observability"
-description = "Grafana Alloy: Ubuntu and Docker metrics, Komodo/Docker logs, OCMS OTLP to Grafana Cloud."
+description = "Grafana Alloy: Ubuntu/Docker/OCMS metrics to PVE LGTM; Komodo/Docker logs and OCMS logs/traces to Grafana Cloud."
 tags = ["usbharu-lab"]
 deploy = false
 [stack.config]
