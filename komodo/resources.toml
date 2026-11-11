@@ -15,6 +15,7 @@ clone_path = "/etc/komodo/gitops/ocms"
 run_directory = "stacks/ocms"
 file_paths = ["compose.yaml"]
 project_name = "ocms"
+ignore_services = ["migrate"]
 env_file_path = ".komodo.env"
 additional_env_files = [{ path = "/etc/komodo/stacks/management/ocms.env", track = false }]
 environment = """
