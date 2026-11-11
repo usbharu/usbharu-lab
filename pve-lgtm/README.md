@@ -86,6 +86,9 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
 | `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
 
+PVE 用の3つは Grafana の `PVE` フォルダ、ocms-ubuntu 用の2つは `usbharu-lab` フォルダに
+プロビジョニングする。
+
 ### 変数の意味
 
 - **Proxmox VE の `node`** は PVE ホスト（`pve2` / `pve3`）。VM の選択ではない。
@@ -111,7 +114,7 @@ scp stacks/observability/dashboards/usbharulab-infra.json \
     stacks/observability/dashboards/usbharulab-ocms.json root@192.168.1.250:/tmp/
 ssh root@192.168.1.250 '
   for f in usbharulab-infra usbharulab-ocms; do
-    pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/$f.json --perms 644
+    pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/$f.json --perms 644
   done
   pct exec 200 -- bash -c "cd /opt/lgtm && docker compose restart grafana"
 '
@@ -134,30 +137,32 @@ ssh root@192.168.1.250 '
 ## プロビジョニング
 
 Grafana のデータソース UID は `mimir`、`loki`、`tempo`。ダッシュボードは
-UID を固定して `/etc/grafana/provisioning/dashboards` から読み込む。
+UID を固定し、`provider.yaml` で PVE と usbharu-lab の2フォルダに分けて読み込む。
 
 ライブ環境は LXC 200 の `/opt/lgtm`:
 
 - `/opt/lgtm/config/grafana/provisioning/datasources/datasources.yaml`
 - `/opt/lgtm/config/grafana/provisioning/dashboards/provider.yaml`
-- `/opt/lgtm/config/grafana/provisioning/dashboards/*.json`
+- `/opt/lgtm/config/grafana/provisioning/dashboards/pve/*.json`
+- `/opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/*.json`
 - `/opt/lgtm/config/otel-collector.yaml`
 
 このリポジトリの JSON はバックアップと差分管理用。反映するときは PVE ホスト経由で
-LXC にコピーし、Grafana を再起動する。
+LXC にコピーし、Grafana を再起動する。PVE 用の3つは `pve/`、ocms-ubuntu 用の2つは
+`usbharu-lab/` に置く。
 
 ```sh
 scp pve-lgtm/dashboards/*.json root@192.168.1.250:/tmp/
 ssh root@192.168.1.250 '
   for f in proxmox-ve node-exporter-full journal-logs; do
-    pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/$f.json --perms 644
+    pct push 200 /tmp/$f.json /opt/lgtm/config/grafana/provisioning/dashboards/pve/$f.json --perms 644
   done
   pct exec 200 -- bash -c "cd /opt/lgtm && docker compose restart grafana"
 '
 ```
 
 `usbharulab-infra.json` と `usbharulab-ocms.json` は前述のとおり
-`stacks/observability/dashboards/` からコピーする。
+`stacks/observability/dashboards/` から `usbharu-lab/` へコピーする。
 
 UI からインポートする場合も、データソース UID が `mimir` / `loki` / `tempo` と一致している必要がある。
 Grafana の provider は `allowUiUpdates: true` だが、ファイルを更新すると上書きされるため、
