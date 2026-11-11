@@ -104,6 +104,28 @@ processors:
     check_interval: 1s
     limit_mib: 768
     spike_limit_mib: 128
+  # Label telemetry from the OCMS worker on the home LAN so it can be
+  # distinguished from the worker on the VPS (lab_host=ocms-ubuntu).
+  transform/remote_worker:
+    error_mode: ignore
+    metric_statements:
+      - context: resource
+        statements:
+          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
+      - context: datapoint
+        statements:
+          - set(attributes["lab_host"], "ocms-worker-pve") where resource.attributes["service.name"] == "worker"
+    log_statements:
+      - context: resource
+        statements:
+          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["host.name"], "ocms-worker-pve") where attributes["service.name"] == "worker"
+          - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker"
   batch:
     timeout: 5s
     send_batch_size: 8192
@@ -133,13 +155,13 @@ service:
   pipelines:
     metrics:
       receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/remote_worker, batch]
       exporters: [otlphttp/mimir]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/remote_worker, batch]
       exporters: [otlphttp/loki]
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/remote_worker, batch]
       exporters: [otlp/tempo]

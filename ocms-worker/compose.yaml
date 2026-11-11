@@ -1,0 +1,86 @@
+# OCMS worker + runtime on PVE VM110 (ocms-worker, 192.168.1.53).
+# This stack is outside Komodo. The worker shares the OCMS PostgreSQL job
+# queue with the worker on the VPS and claims jobs with FOR UPDATE SKIP LOCKED.
+#
+# Required: /opt/ocms-worker/.env with MEDIA_DB_PASSWORD and INTERNAL_TOKEN.
+# The VPS internal services are reached over WireGuard at 10.0.0.1.
+name: ocms-worker
+services:
+  runtime:
+    image: ghcr.io/usbharu/ocms-runtime:v0.9.2-cpu
+    pull_policy: missing
+    environment:
+      DEPLOYMENT_ENVIRONMENT: production
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure .env}
+      INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
+      INFERENCE_THREADS: "2"
+      WEB_CONCURRENCY: "1"
+    volumes:
+    - models:/models
+    tmpfs:
+    - /tmp:rw,size=512m,mode=1777
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen("http://localhost:8080/healthz")
+      interval: 10s
+      timeout: 5s
+      retries: 60
+    mem_limit: 2g
+    memswap_limit: 8g
+    cpus: 1.5
+    networks:
+      default: {}
+  worker:
+    image: ghcr.io/usbharu/ocms:v0.9.2
+    pull_policy: missing
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://localhost:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      DEPLOYMENT_ENVIRONMENT: production
+      SERVICE: worker
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure .env}
+      CATALOG_URL: http://10.0.0.1:18081
+      TRANSFER_URL: http://10.0.0.1:18082
+      SEARCH_URL: http://10.0.0.1:18083
+      RUNTIME_URL: http://runtime:8080
+      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD:?Configure .env}@10.0.0.1:5434/ocms?sslmode=disable
+      MEDIA_JOB_TIMEOUT_SECONDS: ${MEDIA_JOB_TIMEOUT_SECONDS:-7200}
+      MEDIA_WORKER_CONCURRENCY: "2"
+      MEDIA_PDF_PAGE_CONCURRENCY: "2"
+      SEMANTIC_SEARCH_ENABLED: "false"
+      MEDIA_IMAGE_OCR_ENABLED: ${MEDIA_IMAGE_OCR_ENABLED:-false}
+      MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+    tmpfs:
+    - /tmp:rw,size=1536m,mode=1777
+    mem_limit: 1536m
+    memswap_limit: 3072m
+    cpus: 2
+    depends_on:
+      runtime:
+        condition: service_healthy
+    networks:
+      default: {}
+volumes:
+  models: {}

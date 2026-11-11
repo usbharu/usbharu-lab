@@ -1,0 +1,12 @@
+# /etc/wireguard/wg0.conf on VM110 (ocms-worker).
+# Replace the keys and the VPS endpoint. Never commit the private key.
+[Interface]
+Address = 10.0.0.4/32
+PrivateKey = <VM110_PRIVATE_KEY>
+MTU = 1420
+
+[Peer]
+PublicKey = <VPS_PUBLIC_KEY>
+AllowedIPs = 10.0.0.1/32
+Endpoint = <VPS_PUBLIC_IP>:51820
+PersistentKeepalive = 25
