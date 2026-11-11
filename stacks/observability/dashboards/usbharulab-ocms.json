@@ -552,8 +552,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by(__name__) (rate({__name__=~\"media_(upload|download|crypto)_bytes\",lab_host=\"ocms-ubuntu\"}[$__rate_interval]))",
-          "legendFormat": "{{__name__}}",
+          "expr": "label_replace(rate(media_upload_bytes{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"metric\", \"upload\", \"\", \"\") or label_replace(rate(media_download_bytes{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"metric\", \"download\", \"\", \"\") or label_replace(rate(media_crypto_bytes{lab_host=\"ocms-ubuntu\"}[$__rate_interval]), \"metric\", \"crypto\", \"\", \"\")",
+          "legendFormat": "{{metric}}",
           "range": true,
           "instant": false
         }
