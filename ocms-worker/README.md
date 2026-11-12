@@ -141,8 +141,12 @@ VPS の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
 値は Git にコミットしない。テンプレートは `env.example`。
 
 `ocms-worker/compose.yaml` の image タグは、VPS の `stacks/ocms/compose.yaml` と
-必ず揃える。VPS のデプロイ完了前に新しい worker を起動すると、内部 API の
+揃える。VPS のデプロイ完了前に新しい worker を起動すると、内部 API の
 バージョン不一致で `PROCESSING_FAILED` になる。
+
+catalog のクエリ修正など、内部 API の互換性が変わらないパッチでは、VPS 側だけ
+先に更新して worker を再起動しなくてよい。API の変更を伴う場合は、VPS の
+デプロイ完了後に worker も同じタグへ更新する。
 
 ```sh
 scp compose.yaml ubuntu@192.168.1.53:/opt/ocms-worker/
