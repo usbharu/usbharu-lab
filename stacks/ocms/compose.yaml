@@ -136,7 +136,7 @@ services:
       default: {}
       telemetry: {}
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.10.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.10.1-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
@@ -297,7 +297,7 @@ services:
     - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   recommender:
-    image: ghcr.io/usbharu/ocms-runtime:v0.10.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.10.1-cpu
     command:
     - uvicorn
     - recommendation_server:app
