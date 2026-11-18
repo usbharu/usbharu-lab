@@ -54,10 +54,11 @@
         "name": "source",
         "label": "Source",
         "type": "custom",
-        "query": "pve2-journald,vm100-journald,vm101-journald,ocis",
+        "query": "pve2-journald,pve3-journald,vm100-journald,vm101-journald,ocis",
         "current": {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
         "options": [
           {"selected": false, "text": "pve2-journald", "value": "pve2-journald"},
+          {"selected": false, "text": "pve3-journald", "value": "pve3-journald"},
           {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
           {"selected": false, "text": "vm101-journald", "value": "vm101-journald"},
           {"selected": false, "text": "ocis", "value": "ocis"}

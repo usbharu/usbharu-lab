@@ -13,13 +13,13 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | 場所 | 役割 |
 | --- | --- |
 | LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared |
-| PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
+| PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`、クラスタ API と pve2 のローカルハードウェア）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
+| PVE pve3（192.168.1.251） | Go pve-exporter（systemd、`:9221`、pve3 のローカルハードウェアのみ）、OTel Collector（hostmetrics + journald） |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
 | VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
 | ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクスを WireGuard 経由で LXC 200 へ送る |
 | VM110 `ocms-worker`（192.168.1.53） | OCMS remote worker/runtime。OTLP を LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32`、VM110 `10.0.0.4/32` |
-| PVE pve3（192.168.1.76） | 現在停止中。ダッシュボードにはオフラインとして表示される |
 
 公開 Grafana は `https://grafana.usbharu.dev`。Cloudflare Tunnel `lgtm-grafana` を
 LXC 200 内の cloudflared で動かし、`http://grafana:3000` に転送している。
@@ -31,7 +31,8 @@ LXC 200 内の cloudflared で動かし、`http://grafana:3000` に転送して�
 ocms-ubuntu Alloy ── WireGuard ── OTLP 4318 ─┐
 VM110 ocms-worker ── OTLP 4318 ──────────────┤
 VM101 oCIS metrics (sidecar) ── OTLP 4318 ───┤
-PVE pve2 :9221 (pve-exporter) ───────────────┤
+PVE pve2 :9221 (cluster API + local) ────────┤
+PVE pve3 :9221 (local hardware only) ────────┤
 VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector (LXC 200) ─┬─ Mimir (metrics)
 VM101 oCIS traces ── OTLP 4317 ──────────────┤                              ├─ Loki  (logs)
 PVE/VM journald ── OTLP 4317 ────────────────┘                              └─ Tempo (traces)
@@ -40,9 +41,12 @@ PVE/VM journald ── OTLP 4317 ───────────────�
 ```
 
 - pve-exporter の収集に約20秒かかるため、スクレイプは 60秒間隔・50秒 timeout。
+- Proxmox API のメトリクスは pve2 の exporter に集約している。pve3 の exporter からは
+  SMART、センサー、ディスク I/O、ZFS ARC などローカル系だけを Collector で残し、
+  API 系の重複シリーズを落とす。
 - node_exporter は 30秒間隔。`instance` ラベルはゲスト名（`picoclaw` / `ocis`）に正規化し、
   `vmid` ラベルも付与している。
-- PVE ホストと VM の journald は全ログ（カーネル含む）を OTLP で LXC 200 に送る。
+- PVE ホスト（pve2 / pve3）と VM の journald は全ログ（カーネル含む）を OTLP で LXC 200 に送る。
 - ocms-ubuntu の Alloy は Ubuntu・Docker・OCMS の全メトリクスを OTLP/HTTP で LXC 200 に送る。
   ログとトレースは Grafana Cloud に残る。
 
@@ -88,7 +92,7 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | --- | --- | --- | --- | --- |
 | `dashboards/proxmox-ve.json` | `proxmox-ve` | `mimir` | `node` = `pve2` / `pve3` | PVE クラスタ、ノード、VM/LXC、ストレージ、SMART、センサー |
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
-| `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
+| `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `pve3-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
 | `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
 | `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM のデータ量、バージョン、テナント、ストレージ、Grafana レイテンシ、遅い handler/route、コンポーネント資源 |
 | `dashboards/opentelemetry-collector.json` | `BKf2sowmj` | `mimir` | `datasource` / `job` など | OpenTelemetry Collector 公式ダッシュボード（Grafana.com 15983） |
@@ -192,17 +196,26 @@ Grafana の provider は `allowUiUpdates: true` だが、ファイルを更新�
 
 ### PVE ホスト: Go pve-exporter
 
+pve2 と pve3 の両方で同じ exporter を動かす。
+
 - バイナリ: `bigtcze/pve-exporter` v1.14.4（`/usr/local/bin/pve-exporter`）
 - 設定: `/etc/pve-exporter/config.yml`（root:pve-exporter 0640）
 - systemd: `pve-exporter.service`
 - 認証: PVE ユーザー `monitoring@pve`、トークン `pve-exporter`、ロール `PVEAuditor`
 - 例: `examples/pve-exporter-go.yaml`、`examples/pve-exporter.service`
 
-SMART は [bigtcze/pve-exporter](https://github.com/bigtcze/pve-exporter) の `scripts/pve-smart-collector.sh` を `/usr/local/bin` に置き、
-`/etc/cron.d/pve-smart-collector` で5分ごとに実行する。
+pve2 は `proxmox.host` を `192.168.1.250` にしてクラスタ全体の API メトリクスを担当する。
+pve3 は `proxmox.host` を `192.168.1.251` にし、Collector の `pve-local` ジョブで
+`pve_(disk|sensor|zfs_arc)_.*|pve_exporter_.*|up` だけを残す。
+同じクラスタで API を二重に取ると `pve_node_vm_count` などの集計が倍になるため、
+pve3 からはローカルハードウェアのシリーズだけを使う。
+
+SMART は [bigtcze/pve-exporter](https://github.com/bigtcze/pve-exporter) の `scripts/pve-smart-collector.sh` を
+pve2 と pve3 の `/usr/local/bin` に置き、`/etc/cron.d/pve-smart-collector` で5分ごとに実行する。
 SMART の `node` ラベルを Proxmox のノード名に合わせるため、スクリプト内の
 `hostname -f` は `hostname -s` に変更している。
-センサーは `lm-sensors` の `sensors -j` を読む。
+センサーは `lm-sensors` の `sensors -j` を読む。pve3 は HP ProLiant DL360 Gen9 のため、
+`lm-sensors` では CPU（coretemp）、NIC（tg3）、消費電力（power_meter）を取得する。
 
 ### VM: node_exporter
 
@@ -294,10 +307,10 @@ PVE ホストと VM で `otelcol-contrib` の `journald` receiver を使う。
 oCIS コンテナのログは Docker の `journald` ログドライバ経由で同じ journal に入り、
 `CONTAINER_NAME=ocis` のエントリは `service.name=ocis` として Loki に送られる。
 
-- PVE ホストの設定例: `examples/pve-host-otelcol.yaml`
+- PVE ホストの設定例: `examples/pve-host-otelcol.yaml`（`<PVE_HOST>` を `pve2` / `pve3` に置換）
 - VM の設定例: `examples/vm-otelcol.yaml`（`<VM_NAME>` / `<HOST_NAME>` を置換）
 - 送信先: `192.168.1.240:4317`
-- Loki の `service_name`: `pve2-journald`、`vm100-journald`、`vm101-journald`
+- Loki の `service_name`: `pve2-journald`、`pve3-journald`、`vm100-journald`、`vm101-journald`
 
 PVE ホスト側は `systemd-journal` グループに `otelcol-contrib` を追加する。
 VM 側も同様。`/var/log/journal` が無い場合は persistent journal を有効にするか、
@@ -309,7 +322,7 @@ VM 側も同様。`/var/log/journal` が無い場合は persistent journal を�
 
 | 場所 | 内容 |
 | --- | --- |
-| `/etc/pve-exporter/config.yml` | PVE API トークン。root:pve-exporter 0640 |
+| `/etc/pve-exporter/config.yml`（pve2 / pve3） | PVE API トークン。root:pve-exporter 0640 |
 | `/etc/wireguard/wg0.conf`（pve2） | pve2 の秘密鍵と VPS の公開鍵。0600 |
 | `/etc/wireguard/wg0.conf`（ocms-ubuntu） | VPS の秘密鍵と pve2 ピア。0600 |
 | `/opt/lgtm/.env` | Grafana admin パスワード、Cloudflare Tunnel トークン、Pocket ID の client secret。0600 |
@@ -325,6 +338,10 @@ VM 側も同様。`/var/log/journal` が無い場合は persistent journal を�
 # PVE exporter
 systemctl status pve-exporter
 curl -fsS http://127.0.0.1:9221/metrics | grep '^pve_exporter_up'
+
+# PVE exporter / OTel Collector on pve3
+ssh root@192.168.1.251 'systemctl status pve-exporter otelcol-contrib'
+ssh root@192.168.1.251 'curl -fsS http://127.0.0.1:9221/metrics | grep -E "^pve_(exporter_up|disk_health_status|sensor_temperature_celsius)"'
 
 # LGTM
 pct exec 200 -- bash -c 'cd /opt/lgtm && docker compose ps'
@@ -353,17 +370,17 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 
 ## 注意点
 
-- **pve3 は停止中**。Go exporter は pve3 への API 呼び出しで
-  `API request failed with status: 595` を出すが、これは停止中のノードに対する
-  想定内のエラー。ダッシュボードでは `node/pve3` がオフラインになる。
+- **pve3 のセンサー**。HP ProLiant DL360 Gen9 では `lm-sensors` が
+  coretemp（CPU）、tg3（NIC）、power_meter（消費電力）を読む。
+  ディスク温度は SMART から取得する。
 - **ZFS 行は空**。この PVE は ZFS プールを使っていない。
 - **VM101 のディスクは 96%**。node_exporter / otelcol-contrib の導入で消費が増えている。
   ログは Loki に送っているので、必要なら `journalctl --vacuum-size=500M` でローカルを削減する。
 - pve-exporter の収集は約20秒。スクレイプ間隔60秒・timeout50秒を下回らないようにする。
-- 複数 PVE ホストの場合、API 系メトリクスはクラスタ単位で1台の exporter に集約する。
-  各ホストの SMART/センサー/ZFS はローカル exporter が必要だが、同じクラスタで
-  複数 exporter を動かすと API メトリクスが重複する。ローカル系だけを分離するか、
-  `instance` で重複排除する設計が必要。
+- 複数 PVE ホストの API 系メトリクスはクラスタ単位で1台の exporter に集約する。
+  `biwako` クラスタでは pve2 が担当し、pve3 の exporter は Collector 側で
+  ローカル系だけに絞っている。別クラスタを追加するときは、そのクラスタにも
+  API 担当の exporter を1台置き、他のノードはローカル系だけを残す。
 - Grafana の公開経路は LXC 200 の cloudflared に依存する。LXC が止まれば Grafana 自体も
   止まるため、追加の単一障害点にはならない。
 - ocms-ubuntu のメトリクスは WireGuard に依存する。トンネルが切れると pve-lgtm 側の
@@ -402,3 +419,15 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
   `LGTM` フォルダにロード
 - `otelcol_process_uptime`、`otelcol_processor_incoming_items`、
   `otelcol_exporter_sent_metric_points` を Mimir で取得
+
+### pve3 追加時（2026-11-17）
+
+- pve3（192.168.1.251）の pve-exporter が `pve_exporter_up 1` を返す
+- pve3 の SMART 8台（`sda`〜`sdh`）を `pve_disk_health_status` で取得
+- pve3 の CPU/NIC 温度と消費電力を `pve_sensor_temperature_celsius` /
+  `pve_sensor_power_watts` で取得
+- `up{job="pve-local"}` が 1、`system_cpu_logical_count{job="pve3-hostmetrics"}` が 16
+- Loki の `{service_name="pve3-journald"}` で pve3 の journal を取得
+- `pve_node_up{node="pve3"}` が 1、`count(pve_node_vm_count)` が 2 のままで
+  API メトリクスの二重化がない
+- `journal-logs` ダッシュボードの `source` に `pve3-journald` が表示される
