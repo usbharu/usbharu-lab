@@ -17,7 +17,7 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | PVE pve3（192.168.1.251） | Go pve-exporter（systemd、`:9221`、pve3 のローカルハードウェアのみ）、OTel Collector（hostmetrics + journald） |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
 | VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
-| ocms-ubuntu VPS（外部VPS） | Alloy、Komodo。メトリクス・ログ・トレースを WireGuard 経由で LXC 200 へ送る |
+| ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクス・ログ・トレースを WireGuard 経由で LXC 200 へ送る |
 | VM110 `ocms-worker`（192.168.1.53） | OCMS remote worker/runtime。OTLP を LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32`、VM110 `10.0.0.4/32` |
 
@@ -541,3 +541,16 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - 同じ時点の Tempo 向け累計 span 数と New Relic 向け累計 span 数が一致した
 - Mimir / Loki / Tempo への送信は継続している
 - New Relic UI での受信確認は NRQL で行う（Collector 側は HTTP 送信成功まで確認済み）
+
+### Grafana Cloud 廃止（2026-11-19）
+
+- Alloy から Grafana Cloud の exporter と認証情報を削除し、全シグナルを PVE LGTM に切り替えた
+- Alloy v1.21.2 の `alloy validate` が通った
+- Komodo が observability スタックを反映し、Alloy が再起動した
+- pve-lgtm Loki に Komodo ログ（`service_name=komodo-core` など、
+  `host_name=ocms-ubuntu`）が入った
+- Tempo に VPS worker のトレース（`resource.host.name=ocms-ubuntu`）が入った
+- Mimir のメトリクス受信は継続している
+- 中央 Collector の Mimir / Loki / Tempo 向け送信数と New Relic 向け送信数が一致し、
+  `otelcol_exporter_send_failed_*` と queue は 0 のまま
+- 反映直後に Tempo が約10秒停止したが、OOM ではなく、その後は正常に受信している
