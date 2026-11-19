@@ -20,13 +20,13 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | --- | --- |
 | `bootstrap/sync.toml` | 初回に手動設定するResource Sync。実行中のSync自身は同期対象にしない |
 | `komodo/resources.toml` | 3つのStack、GitOps用Procedure |
-| `stacks/observability/` | Alloy、PVE LGTMへのメトリクス送信、Grafana Cloudへのログ・トレース送信、Ubuntu・Docker・Komodo・OCMSのダッシュボード。詳細は[監視の手順](stacks/observability/README.md) |
+| `stacks/observability/` | Alloy、Ubuntu・Docker・Komodo・OCMSのメトリクス・ログ・トレースをPVE LGTMへ送信、Ubuntu・Docker・Komodo・OCMSのダッシュボード。詳細は[監視の手順](stacks/observability/README.md) |
 | `stacks/management/compose.yaml` | Komodo Core・Periphery、MongoDB、Pocket ID、Traefik |
 | `stacks/management/traefik/routes.yaml` | OCMS・Pocket ID・KomodoへのHTTPルーティング |
 | `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。ホスト上のPostgreSQL 17とCloudflare R2を使用。PVE VM110のremote worker向けに内部APIをWireGuard `10.0.0.1` へ公開 |
 | `ocms-worker/` | PVE VM110上のOCMS remote worker/runtime。VPSのOCMSと同じジョブキューを共有し、WireGuard経由でPostgreSQLと内部APIへ接続する。Komodo管理外 |
 
-`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。`ocms-ubuntu`とpve2の間はWireGuardで接続し、AlloyのメトリクスだけをこのLGTMへ送る。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
+`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。`ocms-ubuntu`とpve2の間はWireGuardで接続し、Alloyのメトリクス・ログ・トレースをこのLGTMへ送る。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
 
 `ocms-worker/`はKomodo管理外で、PVE VM110上のOCMS worker/runtimeを管理する。VPSのOCMSと同じPostgreSQLジョブキューを共有し、WireGuard `10.0.0.4` からVPSの`10.0.0.1`へ接続する。ジョブは`FOR UPDATE SKIP LOCKED`で自動分散する。詳細は[OCMS remote workerの手順](ocms-worker/README.md)を参照する。
 
@@ -82,8 +82,6 @@ Cloudflare Tunnelはホストのsystemdサービスで動く。3つの公開ホ�
 | `/etc/komodo/stacks/management/pocket.env` | Pocket IDの暗号鍵と設定 |
 | `/etc/komodo/stacks/management/.env` | MongoDB起動時の資格情報 |
 | `/etc/komodo/secrets/ocms/crypto.yaml` | 保存済みメディアの暗号鍵。Transferにのみマウント |
-| `/etc/komodo/secrets/observability/cloud.env` | Grafana Cloud OTLP接続情報と送信用トークン（ログ・トレース用）。Alloyにのみ渡す |
-| `/etc/komodo/secrets/observability/grafana-api-token` | ダッシュボード登録用。送信用トークンとは別で、Alloyには渡さない |
 | `/etc/cloudflared/token` | Cloudflare Tunnelのトークン |
 
 ホスト上の環境ファイルは権限600を維持する。暗号鍵は別途バックアップし、再セットアップ時も元の鍵を引き継ぐ。Komodoがclone先に生成する`.komodo.env`も秘密値を含むため、Gitには追加しない。

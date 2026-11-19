@@ -17,7 +17,7 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 | PVE pve3（192.168.1.251） | Go pve-exporter（systemd、`:9221`、pve3 のローカルハードウェアのみ）、OTel Collector（hostmetrics + journald） |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
 | VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
-| ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクスを WireGuard 経由で LXC 200 へ送る |
+| ocms-ubuntu VPS（外部VPS） | Alloy、Komodo。メトリクス・ログ・トレースを WireGuard 経由で LXC 200 へ送る |
 | VM110 `ocms-worker`（192.168.1.53） | OCMS remote worker/runtime。OTLP を LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32`、VM110 `10.0.0.4/32` |
 
@@ -33,11 +33,10 @@ VM110 ocms-worker ── OTLP 4318 ──────────────┤
 VM101 oCIS metrics (sidecar) ── OTLP 4318 ───┤
 PVE pve2 :9221 (cluster API + local) ────────┤
 PVE pve3 :9221 (local hardware only) ────────┤
-VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector (LXC 200) ─┬─ Mimir (metrics)
-VM101 oCIS traces ── OTLP 4317 ──────────────┤                              ├─ Loki  (logs)
-PVE/VM journald ── OTLP 4317 ────────────────┘                              └─ Tempo (traces)
-                                                                                │
-                                                                            Grafana
+VM100/101 :9100 (node_exporter) ─────────────┼─ OTel Collector ─┬─ Mimir  (metrics) ─┐
+VM101 oCIS traces ── OTLP 4317 ──────────────┤      (LXC 200)   ├─ Loki   (logs) ────┼─ Grafana
+PVE/VM journald ── OTLP 4317 ────────────────┘                  ├─ Tempo  (traces) ──┘
+                                                                └─ New Relic (metrics/logs/traces)
 ```
 
 - pve-exporter の収集に約20秒かかるため、スクレイプは 60秒間隔・50秒 timeout。
@@ -47,10 +46,106 @@ PVE/VM journald ── OTLP 4317 ───────────────�
 - node_exporter は 30秒間隔。`instance` ラベルはゲスト名（`picoclaw` / `ocis`）に正規化し、
   `vmid` ラベルも付与している。
 - PVE ホスト（pve2 / pve3）と VM の journald は全ログ（カーネル含む）を OTLP で LXC 200 に送る。
-- ocms-ubuntu の Alloy は Ubuntu・Docker・OCMS の全メトリクスを OTLP/HTTP で LXC 200 に送る。
-  ログとトレースは Grafana Cloud に残る。
+- ocms-ubuntu の Alloy は Ubuntu・Docker・Komodo・OCMS のメトリクス・ログ・トレースを
+  OTLP/HTTP で LXC 200 に送る。Grafana Cloud は使用しない。
 
-## ocms-ubuntu からのメトリクス
+## New Relic への二重送信
+
+LXC 200 の中央 Collector から New Relic（US リージョン）へ、メトリクス・ログ・トレースを
+複製して送る。Mimir / Loki / Tempo への保存はそのままで、New Relic は追加の送信先になる。
+設定前のデータは遡れないため、対象は反映後の分だけになる。
+
+| シグナル | New Relic に届くもの | 届かないもの |
+| --- | --- | --- |
+| メトリクス | PVE、VM、oCIS、ocms-ubuntu（Alloy）、LGTM 自身 | なし |
+| ログ | PVE/VM の journald、oCIS、Komodo、OCMS | なし |
+| トレース | oCIS、OCMS | なし |
+
+ocms-ubuntu の Alloy から LXC 200 へ全シグナルを送るため、Komodo と OCMS の
+ログ・トレースも New Relic に届く。New Relic の取り込み量は増えるため、
+必要なら New Relic 専用の pipeline に `filter` processor を入れて削る。
+
+### キーの作成
+
+1. New Relic にログインし、[API keys](https://one.newrelic.com/api-keys) を開く。
+   EU アカウントは `https://one.eu.newrelic.com/api-keys`。
+2. **Create a key** を押し、Key type で **Ingest - License** を選ぶ。
+   OTLP では User キーや Browser キーは使えない。
+3. 名前（例: `usbharu-lab-otlp`）を入れて作成する。
+4. 作成直後のバナーにキー全体が一度だけ表示される。**Copy key** でコピーする。
+   40桁の16進数で、閉じると再表示できない。紛失したら新しいキーを作る。
+5. キーはアカウント単位。データを入れたいアカウントで作る。
+   US は `one.newrelic.com`、EU は `one.eu.newrelic.com` でログインする。
+
+キー作成には API キーの作成権限が必要。ボタンが無い場合はアカウント管理者に確認する。
+アカウント最初のキーは削除できないため、用途別に名前付きのキーを作ってローテーションする。
+
+### 設定
+
+Collector 側は `examples/central-collector.yaml` の `otlphttp/newrelic`。
+`https://otlp.nr-data.net:4318` に `api-key` ヘッダーでライセンスキーを付け、
+キーは Collector の環境変数 `NEW_RELIC_LICENSE_KEY` から読む。
+
+1. `/opt/lgtm/.env` にキーを追記する（0600 のまま）。
+
+   ```dotenv
+   NEW_RELIC_LICENSE_KEY=REPLACE_WITH_LICENSE_KEY
+   ```
+
+2. `/opt/lgtm` の Compose で `otel-collector` に環境変数を渡す。`.env` は Compose の
+   変数展開に使われるだけで、`environment` か `env_file` に書かないとコンテナには入らない。
+   すでに `env_file: .env` を指定している場合は追記だけでよい。
+
+   ```yaml
+   services:
+     otel-collector:
+       environment:
+         NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+   ```
+
+3. 設定をコピーし、Collector を作り直す。`restart` では環境変数の変更が反映されないため
+   `up -d` を使う。
+
+   ```sh
+   scp pve-lgtm/examples/central-collector.yaml root@192.168.1.250:/tmp/
+   ssh root@192.168.1.250 '
+     pct push 200 /tmp/central-collector.yaml /opt/lgtm/config/otel-collector.yaml --perms 644
+     pct exec 200 -- bash -c "cd /opt/lgtm && docker compose up -d otel-collector"
+   '
+   ```
+
+`NEW_RELIC_LICENSE_KEY` が未設定だと Collector は設定解決に失敗して起動しない。
+その間は Mimir / Loki / Tempo への取り込みも止まるため、先に `.env` と Compose を更新する。
+
+### 確認
+
+Collector が起動し、New Relic 向けの送信が成功しているかを確認する。
+
+```sh
+pct exec 200 -- bash -c 'cd /opt/lgtm && docker compose ps otel-collector'
+pct exec 200 -- docker logs --since 10m lgtm-otel-collector-1 2>&1 | grep -Ei 'newrelic|error'
+```
+
+New Relic UI では、反映直後から次のクエリで件数を確認できる（反映には数分かかることがある）。
+
+```sql
+FROM Metric SELECT count(*) SINCE 1 hour ago
+FROM Log SELECT count(*) SINCE 1 hour ago
+FROM Span SELECT count(*) SINCE 1 hour ago
+```
+
+`otelcol_exporter_send_failed_*{exporter="otlphttp/newrelic"}` が増え続ける場合は、
+キーの種類（Ingest - License）、リージョン（US は `otlp.nr-data.net`）、
+LXC 200 から `otlp.nr-data.net:443` への HTTPS 疎通を確認する。
+
+New Relic は取り込み量で課金される。ログ量やメトリクスのカーディナリティが大きい場合は、
+New Relic 専用の pipeline を分けて `filter` processor で削る。既存の Mimir / Loki / Tempo 向け
+pipeline に filter を足すと、Grafana 側のデータも減る。
+
+2026-11-19 に LXC 200 へ反映し、Collector の自己メトリクスで送信成功まで確認した。
+New Relic 側の受信は上記の NRQL で確認する。
+
+## ocms-ubuntu からのテレメトリ
 
 ocms-ubuntu は PVE のゲストではなく外部 VPS。自宅 LAN 上にないため、pve2 との間に
 WireGuard を張っている。pve2 はトンネルの入口と LGTM への転送だけを担う。
@@ -119,15 +214,15 @@ Grafana の遅さは自作側、Collector の receiver/processor/exporter 詳細
 
 ### ocms-ubuntu のダッシュボード
 
-`stacks/observability/dashboards/` の2つは Grafana Cloud と pve-lgtm の両方で使える。
-データソースを変数化してあるため、pve-lgtm では `mimir` / `loki` / `tempo` を選ぶ。
+`stacks/observability/dashboards/` の2つは pve-lgtm の Grafana で使う。
+データソースを変数化してあるため、`mimir` / `loki` / `tempo` を選ぶ。
 
 - `usbharulab-infra.json`: Ubuntu、Docker、Komodo、Alloy exporter のメトリクスとログ
 - `usbharulab-ocms.json`: OCMS の HTTP、Job、コンテナ、ログ、トレース
 
 この2つは `pve-lgtm/dashboards/` には複製せず、`stacks/observability/dashboards/` を
-唯一の管理元にする。ocms-ubuntu のログとトレースは Grafana Cloud に残しているため、
-pve-lgtm 側ではメトリクス以外のパネルは空になる。LXC へは次のようにコピーする。
+唯一の管理元にする。ocms-ubuntu のログとトレースも pve-lgtm に届くため、
+全パネルを同じ Loki / Tempo で表示できる。LXC へは次のようにコピーする。
 
 ```sh
 scp stacks/observability/dashboards/usbharulab-infra.json \
@@ -273,9 +368,8 @@ OCIS_TRACING_ENDPOINT=192.168.1.240:4317
 ### ocms-ubuntu: Alloy
 
 Komodo 管理の `stacks/observability/` が動かす Alloy が、Ubuntu ホスト、Docker コンテナ、
-OCMS のメトリクスを OTLP/HTTP で `192.168.1.240:4318` に送る。
-Alloy の設定は `stacks/observability/alloy/config.alloy`。ログとトレースは
-Grafana Cloud に送るため、pve-lgtm にはメトリクスだけが届く。
+Komodo、OCMS のメトリクス・ログ・トレースを OTLP/HTTP で `192.168.1.240:4318` に送る。
+Alloy の設定は `stacks/observability/alloy/config.alloy`。Grafana Cloud は使用しない。
 
 ### LGTM スタック
 
@@ -325,7 +419,7 @@ VM 側も同様。`/var/log/journal` が無い場合は persistent journal を�
 | `/etc/pve-exporter/config.yml`（pve2 / pve3） | PVE API トークン。root:pve-exporter 0640 |
 | `/etc/wireguard/wg0.conf`（pve2） | pve2 の秘密鍵と VPS の公開鍵。0600 |
 | `/etc/wireguard/wg0.conf`（ocms-ubuntu） | VPS の秘密鍵と pve2 ピア。0600 |
-| `/opt/lgtm/.env` | Grafana admin パスワード、Cloudflare Tunnel トークン、Pocket ID の client secret。0600 |
+| `/opt/lgtm/.env` | Grafana admin パスワード、Cloudflare Tunnel トークン、Pocket ID の client secret、New Relic ライセンスキー。0600 |
 | `/root/lgtm-s3.env` | R2 の endpoint、bucket、access key、secret。0600 |
 | `/var/lib/pve-exporter/smart.json` | SMART 収集結果。0644（exporter が読む） |
 
@@ -383,9 +477,12 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
   API 担当の exporter を1台置き、他のノードはローカル系だけを残す。
 - Grafana の公開経路は LXC 200 の cloudflared に依存する。LXC が止まれば Grafana 自体も
   止まるため、追加の単一障害点にはならない。
-- ocms-ubuntu のメトリクスは WireGuard に依存する。トンネルが切れると pve-lgtm 側の
-  メトリクスだけ止まり、Grafana Cloud へのログ・トレースは継続する。
+- ocms-ubuntu の全シグナルは WireGuard に依存する。トンネルが切れると pve-lgtm への
+  メトリクス・ログ・トレースが止まり、Alloy のメモリキューに溜まった後に破棄される。
 - OTLP の 4318 は LAN/VPN 内向け。インターネットへ公開しない。
+- New Relic への送信は追加の外部依存。`sending_queue` はメモリ上で、再試行の上限を
+  超えたバッチは落ちる。New Relic 障害中も Mimir / Loki / Tempo への保存は続くが、
+  Collector のキューが埋まる分だけメモリ使用量が増える。
 - `stacks/observability/` の Alloy 設定は Komodo 管理、LGTM スタックは手動管理。
   メトリクスの送信先だけを共有し、デプロイ経路は混ぜない。
 
@@ -431,3 +528,16 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - `pve_node_up{node="pve3"}` が 1、`count(pve_node_vm_count)` が 2 のままで
   API メトリクスの二重化がない
 - `journal-logs` ダッシュボードの `source` に `pve3-journald` が表示される
+
+### New Relic 追加時（2026-11-19）
+
+- `.env` のキー名を `NEW_RELIC_LICENSE_KEY` に修正し、`docker-compose.override.yml` の
+  `otel-collector` に環境変数として渡した
+- Collector を再作成し、`otlphttp/newrelic` exporter が metrics / logs / traces の
+  3 pipeline で起動した
+- `otelcol_exporter_sent_metric_points`、`otelcol_exporter_sent_log_records`、
+  `otelcol_exporter_sent_spans` の `exporter="otlphttp/newrelic"` が増加した
+- `otelcol_exporter_send_failed_*` と `otelcol_exporter_queue_size` は 0 のまま
+- 同じ時点の Tempo 向け累計 span 数と New Relic 向け累計 span 数が一致した
+- Mimir / Loki / Tempo への送信は継続している
+- New Relic UI での受信確認は NRQL で行う（Collector 側は HTTP 送信成功まで確認済み）

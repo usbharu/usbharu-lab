@@ -14,9 +14,6 @@ services:
       - --disable-reporting
     environment:
       GOMEMLIMIT: 384MiB
-      GRAFANA_CLOUD_OTLP_ENDPOINT: ${GRAFANA_CLOUD_OTLP_ENDPOINT:?Configure cloud.env}
-      GRAFANA_CLOUD_INSTANCE_ID: ${GRAFANA_CLOUD_INSTANCE_ID:?Configure cloud.env}
-      GRAFANA_CLOUD_TOKEN: ${GRAFANA_CLOUD_TOKEN:?Configure cloud.env}
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data

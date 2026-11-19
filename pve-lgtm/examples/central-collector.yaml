@@ -1,7 +1,7 @@
 # Central OTel Collector in LXC 200 (lgtm).
-# Receives OTLP from the PVE host, VMs, and ocms-ubuntu (metrics over WireGuard),
+# Receives OTLP from the PVE host, VMs, and ocms-ubuntu (all signals over WireGuard),
 # scrapes pve-exporter and node_exporter, then writes metrics to Mimir, logs to
-# Loki, and traces to Tempo.
+# Loki, and traces to Tempo. The same signals are also copied to New Relic (US).
 #
 # Replace the target addresses and vm/vmid labels when hosts change.
 extensions:
@@ -159,6 +159,23 @@ exporters:
     endpoint: tempo:4317
     tls:
       insecure: true
+  # New Relic OTLP ingest (US region). The license key is read from the
+  # container environment and never stored here. The collector fails to start
+  # when NEW_RELIC_LICENSE_KEY is unset, so configure it before restarting.
+  otlphttp/newrelic:
+    endpoint: https://otlp.nr-data.net:4318
+    headers:
+      api-key: ${env:NEW_RELIC_LICENSE_KEY}
+    compression: gzip
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 500
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 5m
 
 service:
   telemetry:
@@ -176,12 +193,12 @@ service:
     metrics:
       receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
       processors: [memory_limiter, transform/remote_worker, batch]
-      exporters: [otlphttp/mimir]
+      exporters: [otlphttp/mimir, otlphttp/newrelic]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, transform/remote_worker, batch]
-      exporters: [otlphttp/loki]
+      exporters: [otlphttp/loki, otlphttp/newrelic]
     traces:
       receivers: [otlp]
       processors: [memory_limiter, transform/remote_worker, batch]
-      exporters: [otlp/tempo]
+      exporters: [otlp/tempo, otlphttp/newrelic]

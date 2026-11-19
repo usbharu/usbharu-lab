@@ -14,7 +14,7 @@ for stack in resources["stack"]:
     assert config["run_build"] is False, stack["name"]
     assert config["files_on_host"] is False, stack["name"]
     assert config["clone_path"].startswith("/etc/komodo/gitops/"), stack["name"]
-    assert all(not file["track"] for file in config["additional_env_files"])
+    assert all(not file["track"] for file in config.get("additional_env_files", [])), stack["name"]
 for sync in bootstrap["resource_sync"]:
     config = sync["config"]
     assert all(config[key] is False for key in (

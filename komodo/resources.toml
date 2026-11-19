@@ -58,7 +58,7 @@ extra_args = ["--wait", "--wait-timeout", "300"]
 
 [[stack]]
 name = "ocms-observability"
-description = "Grafana Alloy: Ubuntu/Docker/OCMS metrics to PVE LGTM; Komodo/Docker logs and OCMS logs/traces to Grafana Cloud."
+description = "Grafana Alloy: Ubuntu/Docker/Komodo/OCMS metrics, logs and traces to PVE LGTM."
 tags = ["usbharu-lab"]
 deploy = false
 [stack.config]
@@ -72,8 +72,6 @@ run_directory = "stacks/observability"
 file_paths = ["compose.yaml"]
 config_files = [{ path = "alloy/config.alloy", services = ["alloy"], requires = "Restart" }]
 project_name = "ocms-observability"
-env_file_path = ".komodo.env"
-additional_env_files = [{ path = "/etc/komodo/secrets/observability/cloud.env", track = false }]
 auto_pull = false
 run_build = false
 poll_for_updates = false

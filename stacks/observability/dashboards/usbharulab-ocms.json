@@ -689,7 +689,7 @@
         "w": 24,
         "h": 10
       },
-      "description": "pve-lgtm では VM110 worker、Grafana Cloud では VPS worker のログを表示。Worker 変数で切り替える。",
+      "description": "pve-lgtm の Loki に保存された VPS worker (ocms-ubuntu) と VM110 worker (ocms-worker-vm110) のログを表示。Worker 変数で切り替える。",
       "targets": [
         {
           "refId": "A",
@@ -937,7 +937,7 @@
         "w": 24,
         "h": 10
       },
-      "description": "pve-lgtm のみ。VM110 worker の media.job_started / media.pdf_page_completed などを表示",
+      "description": "VM110 worker の media.job_started / media.pdf_page_completed などを表示",
       "targets": [
         {
           "refId": "A",
