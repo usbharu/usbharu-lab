@@ -394,6 +394,45 @@ Collector の receiver/processor/exporter 詳細は、Grafana.com の公式
 Grafana 13.2.6 の `/metrics` にはデータソース別のレイテンシが出ないため、
 Grafana の遅さは handler 別 p95 と `/api/ds/query` の p95 を代理指標にしている。
 
+### Tempo の R2 設定
+
+Cloudflare R2 は multipart upload の非最終パートのサイズがすべて同じであることを
+要求する。Tempo は `storage.trace.s3.part_size` が未設定だと Parquet の row group 単位で
+可変サイズのパートを送るため、compaction が次のエラーで失敗する。
+
+```text
+error completing multipart upload ... All non-trailing parts must have the same length
+```
+
+失敗したアップロードのパートは R2 に残り、オブジェクト一覧には現れないまま
+保存量だけが増える。`tempodb_backend_bytes_total` は完了済みブロックしか数えないため、
+Tempo 側のメトリクスでは気づけない。
+
+`part_size` を 100 MiB に固定するとパート長が揃い、compaction が通る。
+
+```yaml
+storage:
+  trace:
+    s3:
+      part_size: 104857600
+```
+
+既に残っている未完了アップロードは R2 の既定（7日）で消える。すぐ回収する場合は
+`aws s3api list-multipart-uploads` で確認し、`abort-multipart-upload` で削除する。
+
+### Tempo の保存量削減
+
+oCIS のトレースは gateway の内部ヘルパー span が大半を占める。リクエスト単位の
+調査には不要なため、中央 Collector の `filter/ocis_noise` で次の span を落とす。
+
+- `gateway`: `loadAttributes`、`ReadNode`、`ParentWithReader`、`Type`、`Child`、
+  `getNodeIDFromCache`、`GetTreeSize`
+- `ocdav`: `md_to_prop_response`
+
+2026-11-19 時点で spans/s は約81から約33へ減り、完了ブロックは19GB/週から
+約8GB/週になる見込み。内部処理を追いたいときは、該当する条件を
+`examples/central-collector.yaml` から外して Collector を再起動する。
+
 ## ログ収集
 
 PVE ホストと VM で `otelcol-contrib` の `journald` receiver を使う。
@@ -554,3 +593,18 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - 中央 Collector の Mimir / Loki / Tempo 向け送信数と New Relic 向け送信数が一致し、
   `otelcol_exporter_send_failed_*` と queue は 0 のまま
 - 反映直後に Tempo が約10秒停止したが、OOM ではなく、その後は正常に受信している
+
+### Tempo の R2 未完了アップロード回収（2026-11-19）
+
+- R2 の `lgtm-tempo` が1週間で約1TB増えていたが、Tempo の完了済みブロックは約19GBだった
+- 原因は compaction の `All non-trailing parts must have the same length` 失敗で、
+  未完了の multipart upload が5,465件（平均約202MiB、合計約1.08TiB）残っていたこと
+- `storage.trace.s3.part_size: 104857600` を `tempo.yaml.tmpl` に追加して再生成し、
+  Tempo を再起動した。再起動後は同じエラーが発生していない
+- 修正前に開始された未完了アップロード5,465件を `abort-multipart-upload` で削除した
+- 再起動後も進行中のアップロードは残るが、完了後にオブジェクトとして確定する
+- oCIS の内部 span 8種を `filter/ocis_noise` で削除し、spans/s が約81から約33へ減った
+- Tempo から `loadAttributes`、`ReadNode`、`md_to_prop_response` などが消えたことを確認
+- `otelcol_processor_filter_spans_filtered{filter="filter/ocis_noise"}` が約49 spans/sで増加している
+- 2026-11-19 に Tempo の R2 バケットとローカル WAL を全削除し、トレース履歴をリセットした
+- パージ後、古い時間帯のトレースは0件、直近のトレースは取得できることを確認した

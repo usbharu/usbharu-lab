@@ -140,6 +140,21 @@ processors:
         statements:
           - set(attributes["service.namespace"], "usbharu-lab") where attributes["service.name"] == "worker" and attributes["service.namespace"] == nil
           - set(attributes["host.name"], "ocms-worker-vm110") where attributes["service.name"] == "worker" and attributes["service.namespace"] == "usbharu-lab" and attributes["host.name"] == nil
+  # oCIS emits many internal helper spans from the gateway and ocdav. The
+  # request-level RPC spans are enough for most investigations, so drop the
+  # leaf spans that make up the bulk of the trace count.
+  filter/ocis_noise:
+    error_mode: ignore
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "gateway" and name == "loadAttributes"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "ReadNode"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "ParentWithReader"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "Type"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "Child"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "getNodeIDFromCache"'
+        - 'resource.attributes["service.name"] == "gateway" and name == "GetTreeSize"'
+        - 'resource.attributes["service.name"] == "ocdav" and name == "md_to_prop_response"'
   batch:
     timeout: 5s
     send_batch_size: 8192
@@ -200,5 +215,5 @@ service:
       exporters: [otlphttp/loki, otlphttp/newrelic]
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, transform/remote_worker, batch]
+      processors: [memory_limiter, transform/remote_worker, filter/ocis_noise, batch]
       exporters: [otlp/tempo, otlphttp/newrelic]
