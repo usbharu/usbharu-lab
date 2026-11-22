@@ -30,6 +30,8 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 
 `ocms-worker/`はKomodo管理外で、PVE VM110上のOCMS worker/runtimeを管理する。VPSのOCMSと同じPostgreSQLジョブキューを共有し、WireGuard `10.0.0.4` からVPSの`10.0.0.1`へ接続する。ジョブは`FOR UPDATE SKIP LOCKED`で自動分散する。詳細は[OCMS remote workerの手順](ocms-worker/README.md)を参照する。
 
+`pve3/`はpve3ホスト（HP ProLiant DL360 Gen9）の構成をまとめる。HDD 5台のZFS RAIDZ2プールを`hdd-vm`・`hdd-backup`としてPVEに追加している。詳細は[pve3の手順](pve3/README.md)を参照する。DCSサーバーは[pve-dcsの手順](pve-dcs/README.md)を参照する。
+
 既存のServerリソース`ocms-ubuntu`を使用する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
 OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.6.1`と`ghcr.io/usbharu/ocms-runtime:v0.6.1-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
