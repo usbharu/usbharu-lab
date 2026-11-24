@@ -70,7 +70,7 @@ v0.4.0の個人向け「おすすめ」には、Searchに加えて専用の`reco
 
 移行後は`public.schema_migrations`が`version=8, dirty=false`であること、既存Asset・Blob・Original・Principalの件数と新テーブルの権限を確認してから、Komodoで新しい構成をデプロイする。以後の更新はアプリ停止・バックアップ後に同じ`migrate up`を使い、baselineを再実行しない。失敗時はアプリを停止したまま調査し、dirty状態を推測で解除しない。DB変更はGitのrevertだけでは戻らない。
 
-Cloudflare Tunnelは`ocms-ubuntu`のsystemdサービスで動く。3つの公開ホスト名の転送先は`http://127.0.0.1:18080`。Traefikの`ocms`は`http://192.168.1.254:8080`へ転送し、VPSからpve2経由のWireGuardで`ocms-pve3`へ到達する。Tunnel・既存の他アプリは、このリポジトリから変更しない。
+Cloudflare Tunnelは`ocms-ubuntu`（Komodo・Pocket ID）と`ocms-pve3`（OCMS）に分かれている。`ocms.usbharu.dev`は`ocms-pve3`の`cloudflared-ocms`コンテナから`http://192.168.1.254:8080`へ直接転送する。VPSのTraefikの`ocms`ルートとWireGuard経由の経路はフォールバック用に残している。Tunnel・既存の他アプリは、このリポジトリから変更しない。
 
 2026-10-25の更新では、`/var/backups/ocms/v0.3.0-20261025T073358Z`へDBと設定を保存し、読み出し・移行前後の件数一致・新テーブルの権限を確認した。移行履歴は`version=8, dirty=false`。
 

@@ -129,6 +129,12 @@ HDD 上の DB はランダム I/O が遅いため、`shared_buffers=1GB`・
 `effective_cache_size=3GB` を設定している。負荷が高い場合は SSD の
 `local-lvm` へ戻すか、ZFS の ARC と `recordsize` を見直す。
 
+`ocms.usbharu.dev` は `ocms-pve3` 上の `cloudflared-ocms` コンテナ（Tunnel
+`ocms-pve3`）から `http://192.168.1.254:8080` へ直接転送する。VPS の Cloudflare
+Tunnel は Komodo と Pocket ID 用に残している。設定は
+`/etc/cloudflared/config.yml`、認証情報は `/etc/cloudflared/<UUID>.json`（0600）。
+コンテナは `--restart unless-stopped` で、VM 再起動後も自動で再接続する。
+
 ログは各 VM の `otelcol-contrib` から PVE LGTM と New Relic へ送る。
 `db-pve3` は journald・PostgreSQL ファイルログ・hostmetrics、`ocms-pve3` は
 OCMS の OTLP・journald・hostmetrics を収集する。設定は
