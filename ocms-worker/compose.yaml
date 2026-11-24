@@ -8,7 +8,7 @@
 name: ocms-worker
 services:
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.13.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.13.1-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
