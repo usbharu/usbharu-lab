@@ -160,6 +160,9 @@ processors:
     logs:
       log_record:
         - 'severity_number < SEVERITY_NUMBER_WARN'
+  # New Relic only: aggregate metrics over 5 minutes. Mimir keeps full resolution.
+  interval/newrelic:
+    interval: 5m
   batch:
     timeout: 5s
     send_batch_size: 8192
@@ -210,10 +213,14 @@ service:
                 without_units: true
   extensions: [health_check]
   pipelines:
-    metrics:
+    metrics/mimir:
       receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
       processors: [memory_limiter, transform/remote_worker, batch]
-      exporters: [otlphttp/mimir, otlphttp/newrelic]
+      exporters: [otlphttp/mimir]
+    metrics/newrelic:
+      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
+      processors: [memory_limiter, transform/remote_worker, interval/newrelic, batch]
+      exporters: [otlphttp/newrelic]
     logs/loki:
       receivers: [otlp]
       processors: [memory_limiter, transform/remote_worker, batch]
