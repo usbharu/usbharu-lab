@@ -313,7 +313,7 @@ services:
       timeout: 5s
       retries: 30
     pull_policy: missing
-    mem_limit: 256m
+    mem_limit: 512m
     memswap_limit: 512m
     cpus: 0.5
     networks:
