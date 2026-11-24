@@ -111,8 +111,12 @@ ports:
 ## 起動
 
 `ocms-pve3` の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
-`INTERNAL_TOKEN` を取り、VM110 の `/opt/ocms-worker/.env` に 0600 で置く。
-値は Git にコミットしない。テンプレートは `env.example`。
+`INTERNAL_TOKEN` を取り、Komodo の `HF_TOKEN` 変数も合わせて VM110 の
+`/opt/ocms-worker/.env` に 0600 で置く。値は Git にコミットしない。テンプレートは
+`env.example`。
+
+v0.13.x の Runtime は CL Tagger v2 の読み込みに 4 GiB 必要とする。`compose.yaml` の
+runtime は `mem_limit: 4g`、worker は `1536m` とし、VM110 の 6 GiB に収める。
 
 `ocms-worker/compose.yaml` の image タグは、`ocms-pve3` の `stacks/ocms/compose.yaml` と
 揃える。`ocms-pve3` のデプロイ完了前に新しい worker を起動すると、内部 API の

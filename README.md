@@ -34,9 +34,9 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 
 OCMSはServer `ocms-pve3`、PostgreSQLはServer `db-pve3` 上で動く。`ocms-ubuntu` はKomodo・Pocket ID・Traefik・Cloudflare Tunnelと旧DBのバックアップを担当する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.13.1`と`ghcr.io/usbharu/ocms-runtime:v0.13.1-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.13.2`と`ghcr.io/usbharu/ocms-runtime:v0.13.2-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
-RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
+RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。CL Tagger v2の読み込みに合わせてRuntimeのメモリ上限は4 GiB、OCMS VMは8 GiBとし、Catalog/Search/Recommenderは512 MiBとする。推論の初回取得と処理には時間がかかる場合がある。
 
 ## Workerの並列処理
 

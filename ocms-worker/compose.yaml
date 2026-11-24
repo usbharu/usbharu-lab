@@ -8,12 +8,13 @@
 name: ocms-worker
 services:
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.13.0-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.13.2-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
       OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure .env}
+      HF_TOKEN: ${HF_TOKEN:-}
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: "2"
       WEB_CONCURRENCY: "1"
@@ -31,13 +32,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 60
-    mem_limit: 2g
+    mem_limit: 4g
     memswap_limit: 8g
     cpus: 1.5
     networks:
       default: {}
   worker:
-    image: ghcr.io/usbharu/ocms:v0.13.0
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true

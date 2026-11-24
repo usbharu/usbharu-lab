@@ -1,7 +1,7 @@
 name: ocms
 services:
   catalog:
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -39,7 +39,7 @@ services:
     networks:
       default: {}
   transfer:
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -85,7 +85,7 @@ services:
     networks:
       default: {}
   search:
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -128,7 +128,7 @@ services:
     networks:
       default: {}
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.13.1-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.13.2-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
@@ -161,7 +161,7 @@ services:
     networks:
       default: {}
   worker:
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -213,7 +213,7 @@ services:
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: unless-stopped
     init: true
@@ -259,7 +259,7 @@ services:
     networks:
       default: {}
   migrate:
-    image: ghcr.io/usbharu/ocms:v0.13.1
+    image: ghcr.io/usbharu/ocms:v0.13.2
     pull_policy: missing
     restart: 'no'
     init: true
@@ -279,7 +279,7 @@ services:
       MIGRATIONS_DIR: /app/migrations
     mem_limit: 128m
   recommender:
-    image: ghcr.io/usbharu/ocms-runtime:v0.13.1-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.13.2-cpu
     command:
     - uvicorn
     - recommendation_server:app
