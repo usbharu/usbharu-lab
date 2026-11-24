@@ -21,6 +21,7 @@ additional_env_files = [{ path = "/etc/komodo/stacks/management/ocms.env", track
 environment = """
 R2_ACCESS_KEY_ID = [[OCMS_R2_ACCESS_KEY_ID]]
 R2_SECRET_ACCESS_KEY = [[OCMS_R2_SECRET_ACCESS_KEY]]
+HF_TOKEN = [[HF_TOKEN]]
 """
 auto_pull = false
 run_build = false
