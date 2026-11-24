@@ -34,7 +34,7 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 
 OCMSはServer `ocms-pve3`、PostgreSQLはServer `db-pve3` 上で動く。`ocms-ubuntu` はKomodo・Pocket ID・Traefik・Cloudflare Tunnelと旧DBのバックアップを担当する。Composeのプロジェクト名`ocms`・`ocms-management`はデータ用ボリュームの名前に関わるため、移行なしで変更しない。
 
-OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.12.0`と`ghcr.io/usbharu/ocms-runtime:v0.12.0-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
+OCMSはGitHub Actionsが公開する`ghcr.io/usbharu/ocms:v0.13.1`と`ghcr.io/usbharu/ocms-runtime:v0.13.1-cpu`を指定する。Release公開とpublish成功を確認してからComposeのタグを更新し、pushする。タグの変更でKomodoがpull・デプロイする。ソースのビルドは行わない。モデルはRuntimeの初回推論時に取得する。
 
 RuntimeはONNXに統一したGHCR CPU版を使用する。旧`OCMS_RUNTIME_IMAGE=ocms-runtime:local`による置き換えは廃止した。既存の`ocms_models`ボリュームは保持し、新しいモデルのキャッシュにも使う。メモリ約3.8 GiBの試験環境で、Runtimeのメモリ上限2 GiB・swap込み8 GiBは継続する。推論の初回取得と処理には時間がかかる場合がある。
 
@@ -56,7 +56,7 @@ v0.4.0の個人向け「おすすめ」には、Searchに加えて専用の`reco
 
 ## DBマイグレーションを伴う更新
 
-現在のスキーマは `version=14, dirty=false`（v0.12.0）。
+現在のスキーマは `version=16, dirty=false`（v0.13.x）。
 
 `migrate`サービスがアプリと同じタグの`ocms migrate up`を実行し、正常終了してからCatalogを起動する。後続サービスはCatalog経由で待機する。`db-pve3`のPostgreSQL 17は継続使用し、DBや暗号鍵を作り直さない。
 
