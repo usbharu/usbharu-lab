@@ -49,21 +49,22 @@ PVE/VM journald ── OTLP 4317 ───────────────�
 - ocms-ubuntu の Alloy は Ubuntu・Docker・Komodo・OCMS のメトリクス・ログ・トレースを
   OTLP/HTTP で LXC 200 に送る。Grafana Cloud は使用しない。
 
-## New Relic への二重送信
+## New Relic への送信
 
-LXC 200 の中央 Collector から New Relic（US リージョン）へ、メトリクス・ログ・トレースを
-複製して送る。Mimir / Loki / Tempo への保存はそのままで、New Relic は追加の送信先になる。
-設定前のデータは遡れないため、対象は反映後の分だけになる。
+LXC 200 の中央 Collector から New Relic（US リージョン）へ、メトリクスと
+warn 以上のログを送る。Mimir / Loki / Tempo への保存は全量のまま。
+トレースは Tempo のみに保存し、New Relic へは送らない。
 
 | シグナル | New Relic に届くもの | 届かないもの |
 | --- | --- | --- |
 | メトリクス | PVE、VM、oCIS、ocms-ubuntu（Alloy）、LGTM 自身 | なし |
-| ログ | PVE/VM の journald、oCIS、Komodo、OCMS | なし |
-| トレース | oCIS、OCMS | なし |
+| ログ | warn 以上のログ（PVE/VM の journald、oCIS、Komodo、OCMS） | info/debug ログ（Grafana Loki には全量） |
+| トレース | 送らない | すべて（Grafana Tempo には全量） |
 
-ocms-ubuntu の Alloy から LXC 200 へ全シグナルを送るため、Komodo と OCMS の
-ログ・トレースも New Relic に届く。New Relic の取り込み量は増えるため、
-必要なら New Relic 専用の pipeline に `filter` processor を入れて削る。
+`logs/newrelic` pipeline は `filter/newrelic_logs` で
+`severity_number < SEVERITY_NUMBER_WARN` を落とす。`traces/tempo` pipeline は
+New Relic exporter を持たない。アカウントが HTTP 402 を返す間は New Relic 側で
+受信できないため、`docker logs lgtm-otel-collector-1 | grep 402` で確認する。
 
 ### キーの作成
 

@@ -155,6 +155,11 @@ processors:
         - 'resource.attributes["service.name"] == "gateway" and name == "getNodeIDFromCache"'
         - 'resource.attributes["service.name"] == "gateway" and name == "GetTreeSize"'
         - 'resource.attributes["service.name"] == "ocdav" and name == "md_to_prop_response"'
+  filter/newrelic_logs:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'severity_number < SEVERITY_NUMBER_WARN'
   batch:
     timeout: 5s
     send_batch_size: 8192
@@ -209,11 +214,15 @@ service:
       receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
       processors: [memory_limiter, transform/remote_worker, batch]
       exporters: [otlphttp/mimir, otlphttp/newrelic]
-    logs:
+    logs/loki:
       receivers: [otlp]
       processors: [memory_limiter, transform/remote_worker, batch]
-      exporters: [otlphttp/loki, otlphttp/newrelic]
-    traces:
+      exporters: [otlphttp/loki]
+    logs/newrelic:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/remote_worker, filter/newrelic_logs, batch]
+      exporters: [otlphttp/newrelic]
+    traces/tempo:
       receivers: [otlp]
       processors: [memory_limiter, transform/remote_worker, filter/ocis_noise, batch]
-      exporters: [otlp/tempo, otlphttp/newrelic]
+      exporters: [otlp/tempo]
