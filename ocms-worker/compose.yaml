@@ -8,7 +8,7 @@
 name: ocms-worker
 services:
   runtime:
-    image: ghcr.io/usbharu/ocms-runtime:v0.13.2-cpu
+    image: ghcr.io/usbharu/ocms-runtime:v0.14.0-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
@@ -38,7 +38,7 @@ services:
     networks:
       default: {}
   worker:
-    image: ghcr.io/usbharu/ocms:v0.13.2
+    image: ghcr.io/usbharu/ocms:v0.14.0
     pull_policy: missing
     restart: unless-stopped
     init: true
