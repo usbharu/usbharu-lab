@@ -61,8 +61,9 @@ warn 以上のログを送る。Mimir / Loki / Tempo への保存は全量のま
 | ログ | warn 以上のログ（PVE/VM の journald、oCIS、Komodo、OCMS） | info/debug ログ（Grafana Loki には全量） |
 | トレース | 送らない | すべて（Grafana Tempo には全量） |
 
-New Relic 向けメトリクスは `interval/newrelic` processor で5分間隔に集約する。
-Mimir はスクレイプ間隔（30秒など）のまま全量保存する。
+New Relic 向けメトリクスは `filter/newrelic_delta` で delta と非単調 sum を除外し、
+`interval/newrelic` processor で5分間隔に集約する。Mimir はスクレイプ間隔
+（30秒など）のまま全量保存する。
 
 `logs/newrelic` pipeline は `filter/newrelic_logs` で
 `severity_number < SEVERITY_NUMBER_WARN` を落とす。`traces/tempo` pipeline は

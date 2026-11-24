@@ -161,6 +161,14 @@ processors:
       log_record:
         - 'severity_number < SEVERITY_NUMBER_WARN'
   # New Relic only: aggregate metrics over 5 minutes. Mimir keeps full resolution.
+  # New Relic only: drop delta and non-monotonic sums; the interval processor
+  # aggregates cumulative sums, gauges, histograms and summaries over 5 minutes.
+  filter/newrelic_delta:
+    error_mode: ignore
+    metrics:
+      metric:
+        - 'metric.aggregation_temporality == AGGREGATION_TEMPORALITY_DELTA'
+        - 'metric.type == METRIC_DATA_TYPE_SUM and metric.is_monotonic == false'
   interval/newrelic:
     interval: 5m
   batch:
@@ -219,7 +227,7 @@ service:
       exporters: [otlphttp/mimir]
     metrics/newrelic:
       receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
-      processors: [memory_limiter, transform/remote_worker, interval/newrelic, batch]
+      processors: [memory_limiter, transform/remote_worker, filter/newrelic_delta, interval/newrelic, batch]
       exporters: [otlphttp/newrelic]
     logs/loki:
       receivers: [otlp]
