@@ -1,0 +1,107 @@
+# OTel Collector on pve3 VM 122 ocms-pve3.
+# The OCMS containers send OTLP to this collector at 192.168.1.254:4318. It
+# adds host.name=ocms-pve3 and service.namespace=usbharu-lab, then forwards to
+# the central LGTM collector (Loki/Mimir/Tempo and New Relic). Host journald
+# logs and host metrics are collected here too.
+#
+# Install: otelcol-contrib 0.165.0 .deb, add the otelcol-contrib user to the
+# systemd-journal group, write this file to
+# /etc/otelcol-contrib/config.yaml, then: systemctl enable --now otelcol-contrib
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  journald:
+    directory: /var/log/journal
+    start_at: end
+    priority: info
+
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu: {}
+      load: {}
+      memory: {}
+      disk: {}
+      network: {}
+      paging: {}
+      processes: {}
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 192
+    spike_limit_mib: 48
+
+  # App signals already carry service.name (catalog, transfer, worker, ...).
+  # Only add the host-level identity so the central collector does not treat
+  # the pve3 worker as the VM110 worker.
+  resource/app:
+    attributes:
+      - key: host.name
+        value: ocms-pve3
+        action: upsert
+      - key: service.namespace
+        value: usbharu-lab
+        action: upsert
+
+  resource/journald:
+    attributes:
+      - key: service.name
+        value: ocms-pve3-journald
+        action: upsert
+      - key: host.name
+        value: ocms-pve3
+        action: upsert
+      - key: service.namespace
+        value: usbharu-lab
+        action: upsert
+
+  resource/host:
+    attributes:
+      - key: service.name
+        value: ocms-pve3-host
+        action: upsert
+      - key: host.name
+        value: ocms-pve3
+        action: upsert
+      - key: service.namespace
+        value: usbharu-lab
+        action: upsert
+
+  batch:
+    timeout: 5s
+    send_batch_size: 4096
+
+exporters:
+  otlp:
+    endpoint: 192.168.1.240:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    logs/app:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/app, batch]
+      exporters: [otlp]
+    metrics/app:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/app, batch]
+      exporters: [otlp]
+    traces/app:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/app, batch]
+      exporters: [otlp]
+    logs/journald:
+      receivers: [journald]
+      processors: [memory_limiter, resource/journald, batch]
+      exporters: [otlp]
+    metrics/host:
+      receivers: [hostmetrics]
+      processors: [memory_limiter, resource/host, batch]
+      exporters: [otlp]

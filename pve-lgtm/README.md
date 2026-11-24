@@ -449,6 +449,28 @@ PVE ホスト側は `systemd-journal` グループに `otelcol-contrib` を追�
 VM 側も同様。`/var/log/journal` が無い場合は persistent journal を有効にするか、
 `/run/log/journal` を指定する。
 
+### pve3 の DB / OCMS VM
+
+`db-pve3`（VM121）と `ocms-pve3`（VM122）は、それぞれ `otelcol-contrib` を
+systemd で動かして中央 Collector へ送る。
+
+| VM | 収集するもの | `service_name` |
+| --- | --- | --- |
+| `db-pve3` | journald、`/var/log/postgresql/*.log`、hostmetrics | `db-pve3-journald`、`postgresql`、`db-pve3-host` |
+| `ocms-pve3` | OCMS の OTLP（`192.168.1.254:4318`）、journald、hostmetrics | アプリの `service.name`、`ocms-pve3-journald`、`ocms-pve3-host` |
+
+`ocms-pve3` の Collector は OCMS コンテナから OTLP を受け、`host.name=ocms-pve3`
+と `service.namespace=usbharu-lab` を付けて中央 Collector へ転送する。これにより
+中央 Collector の `transform/remote_worker` が pve3 の worker を VM110 の worker
+として扱わない。OCMS の Compose は
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.1.254:4318` を指定する。
+
+設定例: `examples/db-pve3-otelcol.yaml`、`examples/ocms-pve3-otelcol.yaml`。
+`otelcol-contrib` は `systemd-journal` と `adm` グループに追加する（DB の
+PostgreSQL ログ用）。Grafana では `{host_name="db-pve3"}` や
+`{host_name="ocms-pve3"}` で検索できる。New Relic へは中央 Collector の
+既存の `otlphttp/newrelic` が同じログを転送する。
+
 ## 機密情報
 
 リポジトリに実値を置かない。以下はホスト側で権限を絞って保存する。

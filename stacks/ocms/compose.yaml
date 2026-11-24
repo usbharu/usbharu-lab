@@ -26,7 +26,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       SERVICE: catalog
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
@@ -64,7 +64,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       SERVICE: transfer
       MEDIA_URL: http://worker:8080
       DATABASE_URL: postgres://ocms_transfer:${TRANSFER_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
@@ -110,7 +110,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       SERVICE: search
       DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       MEDIA_URL: http://worker:8080
@@ -132,7 +132,7 @@ services:
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: '2'
@@ -185,7 +185,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       SERVICE: worker
       DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       TRANSFER_URL: http://transfer:8080
@@ -237,7 +237,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       SERVICE: bff
       TRANSFER_URL: http://transfer:8080
       SEARCH_URL: http://search:8080
@@ -297,7 +297,7 @@ services:
     environment:
       DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.254:4318
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
     tmpfs:
