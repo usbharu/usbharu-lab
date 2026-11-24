@@ -16,7 +16,7 @@ http:
     ocms:
       loadBalancer:
         servers:
-          - url: http://ocms-bff:8080
+          - url: http://192.168.1.254:8080
     pocket-id:
       loadBalancer:
         servers:
