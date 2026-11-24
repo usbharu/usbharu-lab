@@ -1,7 +1,7 @@
 name: ocms-observability
 services:
   alloy:
-    image: grafana/alloy:v1.21.2
+    image: grafana/alloy:v1.22.0
     pull_policy: missing
     restart: unless-stopped
     init: true
