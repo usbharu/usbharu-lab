@@ -187,7 +187,7 @@ iptables -t nat -S POSTROUTING | grep 10.0.0.0/24
 | --- | --- | --- | --- | --- |
 | `dashboards/proxmox-ve.json` | `proxmox-ve` | `mimir` | `node` = `pve2` / `pve3` | PVE クラスタ、ノード、VM/LXC、ストレージ、SMART、センサー |
 | `dashboards/node-exporter-full.json` | `node-exporter-full` | `mimir` | `node` = `picoclaw` / `ocis` | VM 内部の Linux（CPU、メモリ、ディスク、FS、ネットワーク、systemd） |
-| `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `pve3-journald` / `vm100-journald` / `vm101-journald` | 選択したホスト/VM の journal とカーネルログ |
+| `dashboards/journal-logs.json` | `journal-logs` | `loki` | `source` = `pve2-journald` / `pve3-journald` / `vm100-journald` / `vm101-journald` / `db-pve3-journald` / `ocms-pve3-journald` / `postgresql` | 選択したホスト/VM の journal、PostgreSQL、カーネルログ |
 | `dashboards/ocis.json` | `ocis` | `mimir` / `loki` / `tempo` | `metrics` / `logs` / `traces`（datasource） | oCIS のリクエスト、エラー、レイテンシ、転送、CPU、メモリ、ログ、トレース |
 | `dashboards/lgtm.json` | `lgtm` | `mimir` / `loki` | `metrics` / `logs`（datasource） | LGTM のデータ量、バージョン、テナント、ストレージ、Grafana レイテンシ、遅い handler/route、コンポーネント資源 |
 | `dashboards/opentelemetry-collector.json` | `BKf2sowmj` | `mimir` | `datasource` / `job` など | OpenTelemetry Collector 公式ダッシュボード（Grafana.com 15983） |
@@ -209,7 +209,8 @@ Grafana の遅さは自作側、Collector の receiver/processor/exporter 詳細
 - **Linux - Node Exporter Full の `node`** は VM の `instance`（`picoclaw` / `ocis`）。
   `job` は `node` 固定。VM を切り替えるとその VM の Linux 内部メトリクスだけが見える。
 - **Journal & Kernel Logs の `source`** は Loki の `service_name` の生値。
-  `ocis` を選ぶと oCIS コンテナのログだけを表示する。
+  `ocis` を選ぶと oCIS コンテナのログだけを表示する。`db-pve3-journald` /
+  `ocms-pve3-journald` / `postgresql` も選択できる。
   カーネルログは `{service_name="$source"} | json | _TRANSPORT="kernel"` で絞り込む。
 
 ### ocms-ubuntu のダッシュボード

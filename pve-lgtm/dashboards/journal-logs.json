@@ -1,5 +1,7 @@
 {
-  "annotations": {"list": []},
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,10 +12,22 @@
       "id": 1,
       "type": "logs",
       "title": "Journal — $source",
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
-      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
       "targets": [
-        {"refId": "A", "expr": "{service_name=\"$source\"}", "queryType": "range"}
+        {
+          "refId": "A",
+          "expr": "{service_name=\"$source\"}",
+          "queryType": "range"
+        }
       ],
       "options": {
         "showTime": true,
@@ -23,16 +37,31 @@
         "dedupStrategy": "none",
         "detailsMode": "inline"
       },
-      "fieldConfig": {"defaults": {}, "overrides": []}
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     },
     {
       "id": 2,
       "type": "logs",
       "title": "Kernel — $source",
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 12},
-      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
       "targets": [
-        {"refId": "A", "expr": "{service_name=\"$source\"} | json | _TRANSPORT=\"kernel\"", "queryType": "range"}
+        {
+          "refId": "A",
+          "expr": "{service_name=\"$source\"} | json | _TRANSPORT=\"kernel\"",
+          "queryType": "range"
+        }
       ],
       "options": {
         "showTime": true,
@@ -42,26 +71,72 @@
         "dedupStrategy": "none",
         "detailsMode": "inline"
       },
-      "fieldConfig": {"defaults": {}, "overrides": []}
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["logs", "journal", "kernel"],
+  "tags": [
+    "logs",
+    "journal",
+    "kernel"
+  ],
   "templating": {
     "list": [
       {
         "name": "source",
         "label": "Source",
         "type": "custom",
-        "query": "pve2-journald,pve3-journald,vm100-journald,vm101-journald,ocis",
-        "current": {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
+        "query": "pve2-journald,pve3-journald,vm100-journald,vm101-journald,ocis,db-pve3-journald,ocms-pve3-journald,postgresql",
+        "current": {
+          "selected": true,
+          "text": "vm100-journald",
+          "value": "vm100-journald"
+        },
         "options": [
-          {"selected": false, "text": "pve2-journald", "value": "pve2-journald"},
-          {"selected": false, "text": "pve3-journald", "value": "pve3-journald"},
-          {"selected": true, "text": "vm100-journald", "value": "vm100-journald"},
-          {"selected": false, "text": "vm101-journald", "value": "vm101-journald"},
-          {"selected": false, "text": "ocis", "value": "ocis"}
+          {
+            "selected": false,
+            "text": "pve2-journald",
+            "value": "pve2-journald"
+          },
+          {
+            "selected": false,
+            "text": "pve3-journald",
+            "value": "pve3-journald"
+          },
+          {
+            "selected": true,
+            "text": "vm100-journald",
+            "value": "vm100-journald"
+          },
+          {
+            "selected": false,
+            "text": "vm101-journald",
+            "value": "vm101-journald"
+          },
+          {
+            "selected": false,
+            "text": "ocis",
+            "value": "ocis"
+          },
+          {
+            "selected": false,
+            "text": "db-pve3-journald",
+            "value": "db-pve3-journald"
+          },
+          {
+            "selected": false,
+            "text": "ocms-pve3-journald",
+            "value": "ocms-pve3-journald"
+          },
+          {
+            "selected": false,
+            "text": "postgresql",
+            "value": "postgresql"
+          }
         ],
         "hide": 0,
         "includeAll": false,
@@ -69,7 +144,10 @@
       }
     ]
   },
-  "time": {"from": "now-1h", "to": "now"},
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "Journal & Kernel Logs",

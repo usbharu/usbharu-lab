@@ -41,8 +41,8 @@ processors:
     error_mode: ignore
     logs:
       log_record:
-        - 'attributes["SYSLOG_IDENTIFIER"] == "qemu-ga"'
-        - 'IsMatch(attributes["_SYSTEMD_UNIT"], "^user-runtime-dir@")'
+        - 'IsMatch(body, ".*\"SYSLOG_IDENTIFIER\":\"qemu-ga\".*")'
+        - 'IsMatch(body, ".*user-runtime-dir@.*")'
 
   # App signals already carry service.name (catalog, transfer, worker, ...).
   # Only add the host-level identity so the central collector does not treat
