@@ -37,7 +37,7 @@ services:
     networks:
       default: {}
   worker:
-    image: ghcr.io/usbharu/ocms:v0.13.0
+    image: ghcr.io/usbharu/ocms:v0.13.1
     pull_policy: missing
     restart: unless-stopped
     init: true
