@@ -2,7 +2,8 @@
 
 Proxmox VE 9.2 のホスト `pve3`（192.168.1.251）。HP ProLiant DL360 Gen9。
 
-Komodo の管理対象外で、PVE ホスト上で直接設定する。監視は
+PVE ホスト自体は Komodo の管理対象外で、ホスト上で直接設定する。VM 121
+`db-pve3` と VM 122 `ocms-pve3` は Komodo Periphery で管理する。監視は
 [PVE LGTM の手順](../pve-lgtm/README.md)、DCS サーバーは
 [DCS の手順](../pve-dcs/README.md) を参照する。
 
@@ -102,6 +103,31 @@ pvesm add dir hdd-backup --path /hdd/backup --content backup,iso --prune-backups
 - HDD のランダム I/O は遅い。DCS VM 120 のディスクは引き続き SSD の `local-lvm` に置く。
 - プールが自動で import されない場合は `zpool import hdd` を実行する。通常は
   `/etc/zfs/zpool.cache` と initramfs で起動時に import される。
+
+## 仮想マシン
+
+| VMID | 名前 | 役割 | CPU | RAM | ディスク | IP |
+| --- | --- | --- | --- | --- | --- | --- |
+| 121 | `db-pve3` | 共有 PostgreSQL 17（OCMS と今後の DB） | 2 vCPU | 4 GiB | 64 GiB（`hdd-vm`） | `192.168.1.253/24` |
+| 122 | `ocms-pve3` | OCMS（catalog / transfer / search / runtime / worker / recommender / bff） | 4 vCPU | 5 GiB | 80 GiB（`hdd-vm`） | `192.168.1.254/24` |
+| 120 | `dcs` | DCS World サーバー | 8 vCPU | 20 GiB | 200 GiB（`local-lvm`） | `192.168.1.252/24` |
+
+121 と 122 は Ubuntu 24.04 の cloud image から作成した。cloud image の
+machine-id をそのまま使うと DHCP が同じ IP を返すため、初回起動後に
+`/etc/machine-id` と DUID を作り直し、cloud-init で静的 IP を設定している。
+ディスクは ZFS RAIDZ2 の `hdd-vm`、cloud-init ディスクは `local-lvm` に置く。
+
+`db-pve3` は PostgreSQL 17 をネイティブで動かす。PGDG の
+`postgresql-17`・`postgresql-17-pgvector` と Groonga リポジトリの
+`postgresql-17-pgdg-pgroonga` を導入し、ポート 5434 で待ち受ける。
+`ocms` データベースと `ocms_catalog`・`ocms_transfer`・`ocms_search`・
+`ocms_media`・`ocms_migrate` ロールは VPS から移行済み。
+`ocms-pve3` の `/etc/komodo/stacks/management/ocms.env` と
+`/etc/komodo/secrets/ocms/crypto.yaml` を引き継いで使う。
+
+HDD 上の DB はランダム I/O が遅いため、`shared_buffers=1GB`・
+`effective_cache_size=3GB` を設定している。負荷が高い場合は SSD の
+`local-lvm` へ戻すか、ZFS の ARC と `recordsize` を見直す。
 
 ### 構築時の確認結果（2026-11-22）
 

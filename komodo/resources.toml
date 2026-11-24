@@ -1,12 +1,12 @@
 # Apply bootstrap/sync.toml separately; a running sync cannot update itself.
 [[stack]]
 name = "ocms"
-description = "OCMS on host PostgreSQL and Cloudflare R2; GHCR release images and tracked database migrations."
+description = "OCMS on pve3 with the shared PostgreSQL VM and Cloudflare R2; GHCR release images and tracked database migrations."
 tags = ["usbharu-lab"]
 # The procedure deploys stacks in dependency order after Sync updates definitions.
 deploy = false
 [stack.config]
-server = "ocms-ubuntu"
+server = "ocms-pve3"
 repo = "usbharu/usbharu-lab"
 branch = "komodo"
 git_provider = "github.com"

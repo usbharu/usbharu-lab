@@ -1,7 +1,7 @@
 # OCMS remote worker on PVE VM110
 
 PVE pve2 上の VM110 `ocms-worker` で、OCMS の worker と runtime を動かす。
-VPS 上の worker と同じ PostgreSQL ジョブキューを共有し、`FOR UPDATE SKIP LOCKED`
+`ocms-pve3` 上の worker と同じ PostgreSQL ジョブキューを共有し、`FOR UPDATE SKIP LOCKED`
 でジョブを自動分散する。Komodo 管理外の手動スタック。
 
 ## 構成
@@ -9,10 +9,8 @@ VPS 上の worker と同じ PostgreSQL ジョブキューを共有し、`FOR UPD
 | 場所 | 値 |
 | --- | --- |
 | VM110 | `ocms-worker`、`192.168.1.53`、4 vCPU / 6 GiB RAM / 51 GiB disk |
-| WireGuard (VM110) | `10.0.0.4/32` |
-| WireGuard (VPS) | `10.0.0.1/24` |
-| VPS の OCMS 内部 API | `catalog` `10.0.0.1:18081`、`transfer` `:18082`、`search` `:18083`、`runtime` `:18084` |
-| PostgreSQL | `10.0.0.1:5434`、DB `ocms`、ロール `ocms_media` |
+| OCMS の内部 API | `catalog` `192.168.1.254:18081`、`transfer` `:18082`、`search` `:18083`、`runtime` `:18084` |
+| PostgreSQL | `192.168.1.253:5434`、DB `ocms`、ロール `ocms_media` |
 | ローカル runtime | `http://runtime:8080` |
 | 監視 | worker/runtime の OTLP を pve-lgtm `192.168.1.240:4318` へ送る |
 
@@ -21,11 +19,12 @@ VM110 (192.168.1.53)
   worker ── PostgreSQL 5434 ──────────────┐
     │  └── catalog/transfer/search ───────┤
     └── runtime:8080                      │
-                                          │ WireGuard 10.0.0.4 ↔ 10.0.0.1
-VPS (ocms-ubuntu)                         │
-  PostgreSQL 17 :5434 ────────────────────┤
-  catalog :18081 / transfer :18082 ───────┤
-  search :18083 / runtime :18084 ─────────┘
+                                          │ LAN 192.168.1.0/24
+pve3                                      │
+  db-pve3 192.168.1.253:5434 ─────────────┤
+  ocms-pve3 192.168.1.254                  │
+    catalog :18081 / transfer :18082 ─────┤
+    search :18083 / runtime :18084 ───────┘
 ```
 
 ## VM110 の作成
@@ -66,86 +65,61 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker ubuntu
 ```
 
-## WireGuard
+## WireGuard（任意）
 
-VM110 の `/etc/wireguard/wg0.conf` は `wireguard.conf.example` を元にする。
-秘密鍵は VM110 で `wg genkey` して 0600 で保存する。
+OCMS の接続は LAN 経由に移行したため、VM110 の WireGuard は必須ではない。
+LGTM など他の用途で使っていない場合は `sudo systemctl disable --now wg-quick@wg0` で停止してよい。
+既存の `10.0.0.4` 設定は残しても OCMS の動作には影響しない。
 
-VPS の `/etc/wireguard/wg0.conf` に VM110 の peer を追加する。
+## pve3 側の準備
 
-```ini
-[Peer]
-# ocms-worker VM110
-PublicKey = <VM110_PUBLIC_KEY>
-AllowedIPs = 10.0.0.4/32
-```
-
-反映:
-
-```sh
-sudo wg set wg0 peer <VM110_PUBLIC_KEY> allowed-ips 10.0.0.4/32
-sudo systemctl enable --now wg-quick@wg0
-```
-
-VM110 から `ping 10.0.0.1` と `nc -vz 10.0.0.1 5434` を確認する。
-
-## VPS 側の準備
-
-### PostgreSQL 17
+### PostgreSQL 17（db-pve3）
 
 `/etc/postgresql/17/main/postgresql.conf`:
 
 ```conf
-listen_addresses = 'localhost,10.0.0.1'
+listen_addresses = 'localhost,192.168.1.253'
+port = 5434
 ```
 
 `/etc/postgresql/17/main/pg_hba.conf`:
 
 ```conf
-host    ocms    ocms_media    10.0.0.4/32    scram-sha-256
+host    all    all    192.168.1.53/32     scram-sha-256
+host    all    all    192.168.1.254/32    scram-sha-256
 ```
 
 反映:
 
 ```sh
-sudo systemctl restart postgresql@17-main
+sudo pg_ctlcluster 17 main restart
 ```
 
-### UFW
+### OCMS の内部 API（ocms-pve3）
 
-```sh
-sudo ufw allow in on wg0 from 10.0.0.4 to any port 5434 proto tcp
-sudo ufw allow in on wg0 from 10.0.0.4 to any port 18081 proto tcp
-sudo ufw allow in on wg0 from 10.0.0.4 to any port 18082 proto tcp
-sudo ufw allow in on wg0 from 10.0.0.4 to any port 18083 proto tcp
-sudo ufw allow in on wg0 from 10.0.0.4 to any port 18084 proto tcp
-```
-
-### OCMS の内部 API
-
-`stacks/ocms/compose.yaml` で次のポートを `10.0.0.1` に公開している。
+`stacks/ocms/compose.yaml` で次のポートを `192.168.1.254` に公開している。
 Komodo で反映すると `catalog` / `transfer` / `search` / `runtime` が再作成される。
 
 ```yaml
 ports:
-- 10.0.0.1:18081:8080  # catalog
-- 10.0.0.1:18082:8080  # transfer
-- 10.0.0.1:18083:8080  # search
-- 10.0.0.1:18084:8080  # runtime
+- 192.168.1.254:18081:8080  # catalog
+- 192.168.1.254:18082:8080  # transfer
+- 192.168.1.254:18083:8080  # search
+- 192.168.1.254:18084:8080  # runtime
 ```
 
 ## 起動
 
-VPS の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
+`ocms-pve3` の `/etc/komodo/stacks/management/ocms.env` から `MEDIA_DB_PASSWORD` と
 `INTERNAL_TOKEN` を取り、VM110 の `/opt/ocms-worker/.env` に 0600 で置く。
 値は Git にコミットしない。テンプレートは `env.example`。
 
-`ocms-worker/compose.yaml` の image タグは、VPS の `stacks/ocms/compose.yaml` と
-揃える。VPS のデプロイ完了前に新しい worker を起動すると、内部 API の
+`ocms-worker/compose.yaml` の image タグは、`ocms-pve3` の `stacks/ocms/compose.yaml` と
+揃える。`ocms-pve3` のデプロイ完了前に新しい worker を起動すると、内部 API の
 バージョン不一致で `PROCESSING_FAILED` になる。
 
-catalog のクエリ修正など、内部 API の互換性が変わらないパッチでは、VPS 側だけ
-先に更新して worker を再起動しなくてよい。API の変更を伴う場合は、VPS の
+catalog のクエリ修正など、内部 API の互換性が変わらないパッチでは、`ocms-pve3` 側だけ
+先に更新して worker を再起動しなくてよい。API の変更を伴う場合は、`ocms-pve3` の
 デプロイ完了後に worker も同じタグへ更新する。
 
 ```sh
@@ -162,7 +136,7 @@ docker compose up -d --wait
 docker compose ps
 docker logs --since 5m ocms-worker-worker-1
 set -a; . /opt/ocms-worker/.env; set +a
-PGPASSWORD="$MEDIA_DB_PASSWORD" psql -h 10.0.0.1 -p 5434 -U ocms_media -d ocms \
+PGPASSWORD="$MEDIA_DB_PASSWORD" psql -h 192.168.1.253 -p 5434 -U ocms_media -d ocms \
   -c "select status, job_type, count(*) from media.processing_jobs group by 1,2 order by 1,2;"
 ```
 
@@ -192,6 +166,6 @@ pve-lgtm の Mimir exporter は `sending_queue.num_consumers: 1` にしている
 複数 consumer で cumulative counter を送ると、Mimir が out-of-order として
 サンプルを落とすことがあるため。
 
-`usbharulab-ocms` ダッシュボードの Job 系パネルは `ocms-ubuntu` と
+`usbharulab-ocms` ダッシュボードの Job 系パネルは `ocms-pve3` と
 `ocms-worker-vm110` の両方を表示する。コンテナ CPU など VM110 側の cAdvisor は
 収集していないため、そのパネルは VPS のみになる。

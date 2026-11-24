@@ -1,9 +1,10 @@
 # OCMS worker + runtime on PVE VM110 (ocms-worker, 192.168.1.53).
 # This stack is outside Komodo. The worker shares the OCMS PostgreSQL job
-# queue with the worker on the VPS and claims jobs with FOR UPDATE SKIP LOCKED.
+# queue with the workers on ocms-pve3 and claims jobs with FOR UPDATE SKIP LOCKED.
 #
 # Required: /opt/ocms-worker/.env with MEDIA_DB_PASSWORD and INTERNAL_TOKEN.
-# The VPS internal services are reached over WireGuard at 10.0.0.1.
+# The OCMS database and internal services are reached over the LAN at
+# 192.168.1.253:5434 and 192.168.1.254:1808x.
 name: ocms-worker
 services:
   runtime:
@@ -59,11 +60,11 @@ services:
       DEPLOYMENT_ENVIRONMENT: production
       SERVICE: worker
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure .env}
-      CATALOG_URL: http://10.0.0.1:18081
-      TRANSFER_URL: http://10.0.0.1:18082
-      SEARCH_URL: http://10.0.0.1:18083
+      CATALOG_URL: http://192.168.1.254:18081
+      TRANSFER_URL: http://192.168.1.254:18082
+      SEARCH_URL: http://192.168.1.254:18083
       RUNTIME_URL: http://runtime:8080
-      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD:?Configure .env}@10.0.0.1:5434/ocms?sslmode=disable
+      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD:?Configure .env}@192.168.1.253:5434/ocms?sslmode=prefer
       MEDIA_JOB_TIMEOUT_SECONDS: ${MEDIA_JOB_TIMEOUT_SECONDS:-7200}
       MEDIA_WORKER_CONCURRENCY: "2"
       MEDIA_PDF_PAGE_CONCURRENCY: "2"

@@ -26,21 +26,18 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       SERVICE: catalog
       MEDIA_URL: http://worker:8080
-      DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      DATABASE_URL: postgres://ocms_catalog:${CATALOG_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
     ports:
-    - 10.0.0.1:18081:8080
+    - 192.168.1.254:18081:8080
     depends_on:
       migrate:
         condition: service_completed_successfully
-    volumes:
-    - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
     networks:
       default: {}
-      telemetry: {}
   transfer:
     image: ghcr.io/usbharu/ocms:v0.12.0
     pull_policy: missing
@@ -67,10 +64,10 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       SERVICE: transfer
       MEDIA_URL: http://worker:8080
-      DATABASE_URL: postgres://ocms_transfer:${TRANSFER_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      DATABASE_URL: postgres://ocms_transfer:${TRANSFER_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       CRYPTO_CONFIG: /run/secrets/crypto.yaml
       S3_ENDPOINT: 76906b4e38909e314e89939ec9f8e485.r2.cloudflarestorage.com
       S3_ACCESS_KEY: ${R2_ACCESS_KEY_ID:?Configure R2 credentials}
@@ -78,9 +75,8 @@ services:
       S3_TLS: 'true'
       S3_BUCKET: ocms-data
     ports:
-    - 10.0.0.1:18082:8080
+    - 192.168.1.254:18082:8080
     volumes:
-    - /var/run/postgresql:/var/run/postgresql:ro
     - /etc/komodo/secrets/ocms/crypto.yaml:/run/secrets/crypto.yaml:ro
     depends_on:
       catalog:
@@ -88,7 +84,6 @@ services:
     mem_limit: 128m
     networks:
       default: {}
-      telemetry: {}
   search:
     image: ghcr.io/usbharu/ocms:v0.12.0
     pull_policy: missing
@@ -115,38 +110,35 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       SERVICE: search
-      DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      DATABASE_URL: postgres://ocms_search:${SEARCH_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       MEDIA_URL: http://worker:8080
       RUNTIME_URL: http://runtime:8080
       SEMANTIC_SEARCH_ENABLED: false
       RECOMMENDATION_URL: http://recommender:8080
     ports:
-    - 10.0.0.1:18083:8080
+    - 192.168.1.254:18083:8080
     depends_on:
       catalog:
         condition: service_healthy
       recommender:
         condition: service_healthy
-    volumes:
-    - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
     networks:
       default: {}
-      telemetry: {}
   runtime:
     image: ghcr.io/usbharu/ocms-runtime:v0.12.0-cpu
     pull_policy: missing
     environment:
       DEPLOYMENT_ENVIRONMENT: production
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       INTERNAL_TOKEN: ${INTERNAL_TOKEN}
       INFERENCE_DTYPE: ${INFERENCE_DTYPE:-float32}
       INFERENCE_THREADS: '2'
       WEB_CONCURRENCY: '1'
     ports:
-    - 10.0.0.1:18084:8080
+    - 192.168.1.254:18084:8080
     volumes:
     - models:/models
     tmpfs:
@@ -167,7 +159,6 @@ services:
     cpus: 1.5
     networks:
       default: {}
-      telemetry: {}
   worker:
     image: ghcr.io/usbharu/ocms:v0.12.0
     pull_policy: missing
@@ -194,9 +185,9 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       SERVICE: worker
-      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD}@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      DATABASE_URL: postgres://ocms_media:${MEDIA_DB_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       TRANSFER_URL: http://transfer:8080
       SEARCH_URL: http://search:8080
       RUNTIME_URL: http://runtime:8080
@@ -215,12 +206,9 @@ services:
         condition: service_healthy
       runtime:
         condition: service_healthy
-    volumes:
-    - /var/run/postgresql:/var/run/postgresql:ro
     memswap_limit: 3072m
     networks:
       default: {}
-      telemetry: {}
   bff:
     labels:
       dev.usbharu.gitops.repository: https://github.com/usbharu/usbharu-lab
@@ -249,7 +237,7 @@ services:
       CATALOG_URL: http://catalog:8080
       MEDIA_MAX_PDF_PAGES: ${MEDIA_MAX_PDF_PAGES:-500}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       SERVICE: bff
       TRANSFER_URL: http://transfer:8080
       SEARCH_URL: http://search:8080
@@ -260,7 +248,7 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
     ports:
-    - 127.0.0.1:${OCMS_PORT:-8080}:8080
+    - 192.168.1.254:${OCMS_PORT:-8080}:8080
     depends_on:
       transfer:
         condition: service_healthy
@@ -268,16 +256,11 @@ services:
         condition: service_healthy
     mem_limit: 128m
     networks:
-      telemetry: {}
       default: {}
-      edge:
-        aliases:
-        - ocms-bff
   migrate:
     image: ghcr.io/usbharu/ocms:v0.12.0
     pull_policy: missing
     restart: 'no'
-    user: ${OCMS_MIGRATE_UID:?Configure host postgres uid}:${OCMS_MIGRATE_GID:?Configure host postgres gid}
     init: true
     read_only: true
     cap_drop:
@@ -290,11 +273,9 @@ services:
     healthcheck:
       disable: true
     environment:
-      DATABASE_URL: postgres://postgres@/ocms?host=/var/run/postgresql&port=5434&sslmode=disable
+      DATABASE_URL: postgres://ocms_migrate:${OCMS_MIGRATE_PASSWORD}@192.168.1.253:5434/ocms?sslmode=prefer
       APP_DB_PASSWORD: ${CATALOG_DB_PASSWORD:?Configure host ocms.env}
       MIGRATIONS_DIR: /app/migrations
-    volumes:
-    - /var/run/postgresql:/var/run/postgresql:ro
     mem_limit: 128m
   recommender:
     image: ghcr.io/usbharu/ocms-runtime:v0.12.0-cpu
@@ -316,7 +297,7 @@ services:
     environment:
       DEPLOYMENT_ENVIRONMENT: production
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?Configure host ocms.env}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://192.168.1.240:4318
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
     tmpfs:
@@ -336,13 +317,5 @@ services:
     cpus: 0.5
     networks:
       default: {}
-      telemetry: {}
 volumes:
   models: {}
-networks:
-  edge:
-    external: true
-    name: ocms-edge
-  telemetry:
-    external: true
-    name: ocms-telemetry
