@@ -35,7 +35,7 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    mem_limit: 128m
+    mem_limit: 512m
     networks:
       default: {}
   transfer:
@@ -124,7 +124,7 @@ services:
         condition: service_healthy
       recommender:
         condition: service_healthy
-    mem_limit: 128m
+    mem_limit: 512m
     networks:
       default: {}
   runtime:
@@ -155,7 +155,7 @@ services:
       timeout: 5s
       retries: 60
     depends_on: {}
-    mem_limit: 2g
+    mem_limit: 4g
     memswap_limit: 8g
     cpus: 1.5
     networks:
