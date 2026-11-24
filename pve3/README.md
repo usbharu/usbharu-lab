@@ -129,6 +129,11 @@ HDD 上の DB はランダム I/O が遅いため、`shared_buffers=1GB`・
 `effective_cache_size=3GB` を設定している。負荷が高い場合は SSD の
 `local-lvm` へ戻すか、ZFS の ARC と `recordsize` を見直す。
 
+ログは各 VM の `otelcol-contrib` から PVE LGTM と New Relic へ送る。
+`db-pve3` は journald・PostgreSQL ファイルログ・hostmetrics、`ocms-pve3` は
+OCMS の OTLP・journald・hostmetrics を収集する。設定は
+[`pve-lgtm/examples/`](../pve-lgtm/examples/) を参照する。
+
 ### 構築時の確認結果（2026-11-22）
 
 - `zpool scrub hdd` が 0 errors で完了

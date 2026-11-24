@@ -37,6 +37,13 @@ processors:
     limit_mib: 192
     spike_limit_mib: 48
 
+  filter/noise:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["SYSLOG_IDENTIFIER"] == "qemu-ga"'
+        - 'IsMatch(attributes["_SYSTEMD_UNIT"], "^user-runtime-dir@")'
+
   # App signals already carry service.name (catalog, transfer, worker, ...).
   # Only add the host-level identity so the central collector does not treat
   # the pve3 worker as the VM110 worker.
@@ -99,7 +106,7 @@ service:
       exporters: [otlp]
     logs/journald:
       receivers: [journald]
-      processors: [memory_limiter, resource/journald, batch]
+      processors: [memory_limiter, filter/noise, resource/journald, batch]
       exporters: [otlp]
     metrics/host:
       receivers: [hostmetrics]

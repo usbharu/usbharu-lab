@@ -47,6 +47,13 @@ processors:
     limit_mib: 128
     spike_limit_mib: 32
 
+  filter/noise:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["SYSLOG_IDENTIFIER"] == "qemu-ga"'
+        - 'IsMatch(attributes["_SYSTEMD_UNIT"], "^user-runtime-dir@")'
+
   resource/journald:
     attributes:
       - key: service.name
@@ -102,7 +109,7 @@ service:
   pipelines:
     logs/journald:
       receivers: [journald]
-      processors: [memory_limiter, resource/journald, batch]
+      processors: [memory_limiter, filter/noise, resource/journald, batch]
       exporters: [otlp]
     logs/postgresql:
       receivers: [filelog/postgresql]

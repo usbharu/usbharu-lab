@@ -466,6 +466,7 @@ systemd で動かして中央 Collector へ送る。
 `OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.1.254:4318` を指定する。
 
 設定例: `examples/db-pve3-otelcol.yaml`、`examples/ocms-pve3-otelcol.yaml`。
+`qemu-ga` の定期ログと `user-runtime-dir` のログは `filter/noise` で落とす。
 `otelcol-contrib` は `systemd-journal` と `adm` グループに追加する（DB の
 PostgreSQL ログ用）。Grafana では `{host_name="db-pve3"}` や
 `{host_name="ocms-pve3"}` で検索できる。New Relic へは中央 Collector の
