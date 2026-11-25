@@ -12,7 +12,7 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 
 | 場所 | 役割 |
 | --- | --- |
-| LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared |
+| LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared、node_exporter |
 | PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`、クラスタ API と pve2 のローカルハードウェア）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
 | PVE pve3（192.168.1.251） | Go pve-exporter（systemd、`:9221`、pve3 のローカルハードウェアのみ）、OTel Collector（hostmetrics + journald） |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
@@ -267,9 +267,10 @@ UID を固定し、`provider.yaml` で PVE、usbharu-lab、LGTM の3フォルダ
 - `/opt/lgtm/config/grafana/provisioning/dashboards/pve/*.json`
 - `/opt/lgtm/config/grafana/provisioning/dashboards/usbharu-lab/*.json`
 - `/opt/lgtm/config/grafana/provisioning/dashboards/lgtm/*.json`
+- `/opt/lgtm/config/grafana/provisioning/alerting/*.yaml`
 - `/opt/lgtm/config/otel-collector.yaml`
 
-このリポジトリの JSON はバックアップと差分管理用。反映するときは PVE ホスト経由で
+このリポジトリの JSON を管理元とする。反映するときは PVE ホスト経由で
 LXC にコピーし、Grafana を再起動する。PVE 用の3つは `pve/`、oCIS と ocms-ubuntu 用の
 3つは `usbharu-lab/`、LGTM 用の1つは `lgtm/` に置く。
 
@@ -289,9 +290,29 @@ ssh root@192.168.1.250 '
 `usbharulab-infra.json` と `usbharulab-ocms.json` は前述のとおり
 `stacks/observability/dashboards/` から `usbharu-lab/` へコピーする。
 
-UI からインポートする場合も、データソース UID が `mimir` / `loki` / `tempo` と一致している必要がある。
-Grafana の provider は `allowUiUpdates: true` だが、ファイルを更新すると上書きされるため、
-恒久変更はこのリポジトリの JSON を直して再反映する。
+ダッシュボードの provider は `allowUiUpdates: false` なので、UI からの編集は反映されない。
+恒久変更はこのリポジトリの JSON を直して再反映する。UI からインポートする場合も、
+データソース UID が `mimir` / `loki` / `tempo` と一致している必要がある。
+`provider.yaml` の更新は `scripts/apply-grafana-alerting.sh --dashboards` を使う。
+アラートの反映は `scripts/apply-grafana-alerting.sh`。[ALERTING.md](ALERTING.md) を参照する。
+
+## アラート
+
+アラートルール、コンタクトポイント、通知ポリシーは
+`pve-lgtm/provisioning/alerting/*.yaml` で管理し、Grafana の file provisioning で
+読み込む。自動同期はせず、`scripts/apply-grafana-alerting.sh` を手動で実行する。
+通知先は Discord Webhook。URL は `/opt/lgtm/.env` の
+`GRAFANA_DISCORD_WEBHOOK_URL` に置き、Git には入れない。
+
+- 設定の詳細、ルール一覧、閾値、テスト手順: [ALERTING.md](ALERTING.md)
+- 反映: `scripts/apply-grafana-alerting.sh`
+- 検証: `scripts/apply-grafana-alerting.sh --check`
+- ダッシュボードの provider 反映: `scripts/apply-grafana-alerting.sh --dashboards`
+
+file provisioning したルール・コンタクトポイント・ポリシーは UI から編集できない。
+Grafana が停止するとアラート評価と通知も止まるため、監視スタック自身の死活は
+外部監視（#148）で補う必要がある。Grafana OSS は audit logging 非対応で、
+#159 の改ざん検知は file provisioning の UI ロックとダッシュボードの読み取り専用化まで。
 
 ## メトリクス収集
 
@@ -325,6 +346,11 @@ Ubuntu 24.04 の `prometheus-node-exporter` パッケージを使う。
 1860 の systemd パネルも表示できるようにしている。
 LXC 200 の OTel Collector が `:9100` を 30秒ごとにスクレイプする。
 例: `examples/central-collector.yaml`
+
+LXC 200 自身にも `prometheus-node-exporter` を入れ、`192.168.1.240:9100` を
+`vm=lgtm` / `vmid=200` として同じ `node` job でスクレイプする。LXC 200 の
+rootfs 空きを `LgtmRootfs` アラートで監視するため。設定は
+`examples/central-collector.yaml` の `prometheus/vms` に追加済み。
 
 ### VM101: oCIS
 
@@ -553,6 +579,11 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
   Collector のキューが埋まる分だけメモリ使用量が増える。
 - `stacks/observability/` の Alloy 設定は Komodo 管理、LGTM スタックは手動管理。
   メトリクスの送信先だけを共有し、デプロイ経路は混ぜない。
+- アラート設定は `pve-lgtm/provisioning/alerting/` で管理し、
+  `scripts/apply-grafana-alerting.sh` で手動反映する。詳細は
+  [ALERTING.md](ALERTING.md) を参照する。
+- Grafana が停止するとアラート評価と通知も止まる。LXC 200 / Grafana /
+  cloudflared の全停止は外部監視（#148）でしか検知できない。
 
 ## 検証済み
 
@@ -637,3 +668,12 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 - `otelcol_processor_filter_spans_filtered{filter="filter/ocis_noise"}` が約49 spans/sで増加している
 - 2026-11-19 に Tempo の R2 バケットとローカル WAL を全削除し、トレース履歴をリセットした
 - パージ後、古い時間帯のトレースは0件、直近のトレースは取得できることを確認した
+
+### アラート導入（2026-11-25）
+
+- Grafana の file provisioning で 49 ルールを反映し、`provenance=file` を確認した
+- `OcmsJobFailures` / `OcmsJobRetries` / `ExporterMetricFailures` / `NewRelicNoSuccess` / `OcmsUbuntuRootfs` が実データで firing になった
+- LXC 200 に `prometheus-node-exporter` を追加し、`node` job が 3 ターゲットになった
+- db-pve3 / ocms-pve3 の hostmetrics に `filesystem` を追加し、`system_filesystem_usage` を確認した
+- ダッシュボード provider を `allowUiUpdates: false` にした
+- Discord Webhook を `.env` に設定し、`discord-alerts` と severity 別の通知ポリシーを適用した

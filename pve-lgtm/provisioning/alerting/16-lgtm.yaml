@@ -1,0 +1,402 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: lgtm
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: mimir-compactor-stale
+        title: MimirCompactorStale
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'time() - cortex_compactor_last_successful_run_timestamp_seconds'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 3600
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'Mimir compactor が {{ $value }} 秒間成功していません'
+          description: 'compaction が止まっています。Mimir のログ、ディスク、CPU を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: warning
+          category: lgtm
+          issue: '158'
+      - uid: mimir-compactor-failed
+        title: MimirCompactorFailed
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'rate(cortex_compactor_runs_failed_total[10m])'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'Mimir compactor の失敗が増えています ({{ $labels.reason }})'
+          description: 'Mimir のログとディスク使用量を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: warning
+          category: lgtm
+          issue: '158'
+      - uid: mimir-disk-out-of-space
+        title: MimirDiskOutOfSpace
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'increase(cortex_compactor_disk_out_of_space_errors_total[10m])'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: 'Mimir compactor がディスク不足で失敗しました'
+          description: 'LXC 200 のディスク空きを確認し、早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: critical
+          category: lgtm
+          issue: '158'
+      - uid: tempo-compaction-errors
+        title: TempoCompactionErrors
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'rate(tempodb_compaction_errors_total[10m])'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'Tempo の compaction エラーが発生しています'
+          description: 'Tempo のログで multipart upload のエラーを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: warning
+          category: lgtm
+          issue: '158'
+      - uid: tempo-compaction-backlog
+        title: TempoCompactionBacklog
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'tempodb_compaction_outstanding_blocks'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 10
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 30m
+        annotations:
+          summary: 'Tempo の未完了 compaction ブロックが {{ $value }} 件です'
+          description: 'compaction が詰まっています。Tempo のログとディスク I/O を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: warning
+          category: lgtm
+          issue: '158'
+      - uid: lgtm-rootfs
+        title: LgtmRootfs
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                node_filesystem_avail_bytes{instance="lgtm",mountpoint="/"} / node_filesystem_size_bytes{instance="lgtm",mountpoint="/"}
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.15
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'LXC 200 (LGTM) の / 空きが {{ $value }} です'
+          description: 'LGTM の保存先が逼迫しています。Mimir / Loki / Tempo のデータ量と Docker ボリュームを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: warning
+          category: lgtm
+          issue: '158'
+      - uid: lgtm-rootfs-critical
+        title: LgtmRootfsCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                node_filesystem_avail_bytes{instance="lgtm",mountpoint="/"} / node_filesystem_size_bytes{instance="lgtm",mountpoint="/"}
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'LXC 200 (LGTM) の / 空きが {{ $value }} です'
+          description: '空きが 10% を切っています。取り込み停止を避けるため、早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#lgtm'
+          dashboard_uid: lgtm
+        labels:
+          severity: critical
+          category: lgtm
+          issue: '158'

@@ -1,0 +1,299 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: targets
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: tgt-down
+        title: TargetDown
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'up'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: '{{ $labels.job }} / {{ $labels.instance }} が down しています'
+          description: 'up == 0 が 2 分継続しています。Collector、exporter、ネットワークを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#targets'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: critical
+          category: targets
+          issue: '149'
+      - uid: tgt-missing
+        title: TargetMissing
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                label_replace(absent(up{job="mimir"}), "job", "mimir", "", "") or
+                label_replace(absent(up{job="loki"}), "job", "loki", "", "") or
+                label_replace(absent(up{job="tempo"}), "job", "tempo", "", "") or
+                label_replace(absent(up{job="grafana"}), "job", "grafana", "", "") or
+                label_replace(absent(up{job="otelcol"}), "job", "otelcol", "", "") or
+                label_replace(absent(up{job="pve"}), "job", "pve", "", "") or
+                label_replace(absent(up{job="pve-local"}), "job", "pve-local", "", "") or
+                label_replace(absent(up{job="ocis"}), "job", "ocis", "", "") or
+                label_replace(absent(up{job="usbharu-lab/integrations/unix"}), "job", "usbharu-lab/integrations/unix", "", "") or
+                label_replace(absent(up{job="usbharu-lab/integrations/cadvisor"}), "job", "usbharu-lab/integrations/cadvisor", "", "") or
+                label_replace(absent(up{job="usbharu-lab/alloy"}), "job", "usbharu-lab/alloy", "", "") or
+                label_replace((count(up{job="node"}) < bool 3), "job", "node", "", "")
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.job }} の up 系列がありません'
+          description: 'スクレイプ設定からターゲットが消えたか、Collector が停止しています。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#targets'
+        labels:
+          severity: warning
+          category: targets
+          issue: '149'
+      - uid: pve-exporter-down
+        title: PveExporterDown
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_exporter_up'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: '{{ $labels.instance }} の pve-exporter が応答していません'
+          description: 'PVE API トークン、pve-exporter の systemd 状態、PVE API への疎通を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#targets'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: targets
+          issue: '149'
+      - uid: pve-node-down
+        title: PveNodeDown
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_node_up'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: 'PVE ノード {{ $labels.node }} が down です'
+          description: 'PVE クラスタのノード状態と pve-exporter の認証を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#targets'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: targets
+          issue: '149'
+      - uid: critical-vm-down
+        title: CriticalVmDown
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_vm_status{vmid=~"100|101|110|121|122"}'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: '重要 VM {{ $labels.vmid }} ({{ $labels.node }}) が停止しています'
+          description: '意図した停止か確認してください。120 / 108 / 9001 は許可リストから除外しています。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#targets'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: targets
+          issue: '149'

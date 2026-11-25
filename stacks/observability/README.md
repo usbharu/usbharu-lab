@@ -7,13 +7,15 @@ Grafana Alloy v1.21.2 collects this Ubuntu host, Docker containers, Komodo logs 
 | Source | Collected data | Destination |
 | --- | --- | --- |
 | Ubuntu | CPU, load, pressure, memory, swap, filesystems, disk I/O and network, every 30 seconds | PVE LGTM (Mimir) |
-| Docker containers | CPU, throttling, and memory working set, including Komodo and OCMS | PVE LGTM (Mimir) |
+| Docker containers | CPU, throttling, memory working set, and container start time for restart alerts, including Komodo and OCMS | PVE LGTM (Mimir) |
 | Komodo | Core, Periphery and MongoDB stdout/stderr, collected through Docker | PVE LGTM (Loki) |
 | Docker daemon | `docker.service` journal; only entries from the last hour on first startup | PVE LGTM (Loki) |
 | OCMS | Native OTLP/HTTP metrics, logs and traces from Go services, Runtime and recommender | PVE LGTM (Mimir / Loki / Tempo) |
-| Alloy | Scrape health and OTLP exporter delivery and failure counters, every 30 seconds | PVE LGTM (Mimir) |
+| Alloy | Scrape health, OTLP exporter delivery/failure counters, and send-queue size/capacity, every 30 seconds | PVE LGTM (Mimir) |
 
 OCMS stdout is deliberately excluded from Docker log collection to avoid duplicating its OTLP logs. Pocket ID, Traefik, other application logs and system journals other than Docker are excluded. Docker metrics do include all containers. Environment variable values and arbitrary container labels are not collected; only Compose project/service labels are retained. No host file contents or private media are scraped.
+
+`container_start_time_seconds` and the Alloy send-queue metrics are retained for the Grafana alert rules managed in `pve-lgtm/provisioning/alerting/`. See `pve-lgtm/ALERTING.md` for the rule inventory, thresholds and test procedure.
 
 Infrastructure scrapes forward the metric families used by the dashboards, scrape health, and OTLP exporter delivery counters. This applies to Ubuntu, cAdvisor and Alloy self-metrics. OCMS application metrics, logs and traces use the same PVE LGTM path.
 

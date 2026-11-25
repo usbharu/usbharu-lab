@@ -26,7 +26,7 @@ Gitを設定の基準にするため、KomodoのUIで行った構成変更は次
 | `stacks/ocms/compose.yaml` | OCMSの7サービス（推薦エンジンを含む）と起動前のマイグレーション。pve3の共有PostgreSQL VM `db-pve3` とCloudflare R2を使用。PVE VM110のremote worker向けに内部APIを `192.168.1.254` へ公開 |
 | `ocms-worker/` | PVE VM110上のOCMS remote worker/runtime。pve3のOCMSと同じジョブキューを共有し、LAN経由でPostgreSQLと内部APIへ接続する。Komodo管理外 |
 
-`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボードと設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。`ocms-ubuntu`とpve2の間はWireGuardで接続し、Alloyのメトリクス・ログ・トレースをこのLGTMへ送る。詳細は[PVE LGTMの手順](pve-lgtm/README.md)を参照する。
+`pve-lgtm/`はKomodo管理外で、PVEホスト上のローカルLGTMスタックのダッシュボード、アラート設定、設定例を保存する。Resource Sync・Procedure・`stacks/`のデプロイ対象には含まれない。`ocms-ubuntu`とpve2の間はWireGuardで接続し、Alloyのメトリクス・ログ・トレースをこのLGTMへ送る。Grafanaのアラートは`pve-lgtm/provisioning/alerting/`のYAMLを唯一の管理元とし、`scripts/apply-grafana-alerting.sh`で手動反映する（自動同期しない）。通知先はDiscord Webhookで、URLはLXC 200の`/opt/lgtm/.env`に置く。詳細は[PVE LGTMの手順](pve-lgtm/README.md)と[アラート設定](pve-lgtm/ALERTING.md)を参照する。
 
 `ocms-worker/`はKomodo管理外で、PVE VM110上のOCMS worker/runtimeを管理する。pve3のOCMSと同じPostgreSQLジョブキューを共有し、LANの`192.168.1.253:5434`（DB）と`192.168.1.254:1808x`（内部API）へ接続する。ジョブは`FOR UPDATE SKIP LOCKED`で自動分散する。詳細は[OCMS remote workerの手順](ocms-worker/README.md)を参照する。
 

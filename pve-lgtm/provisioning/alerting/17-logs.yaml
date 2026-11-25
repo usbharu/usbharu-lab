@@ -1,0 +1,123 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: logs
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: komodo-error-logs
+        title: KomodoErrorLogs
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: loki
+            queryType: instant
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: 'sum(count_over_time({service_name=~"komodo-.*"} |~ "(?i)(error|failed|panic|fatal)" [5m]))'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'Komodo のエラーログを検出しました'
+          description: 'komodo-core / komodo-periphery / komodo-mongo のログを確認してください。GitOps の失敗や Resource is busy の再発を検知します。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#logs'
+          dashboard_uid: journal-logs
+        labels:
+          severity: warning
+          category: logs
+          issue: '155'
+      - uid: postgres-fatal-logs
+        title: PostgresFatalLogs
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: loki
+            queryType: instant
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: >-
+                sum(count_over_time({service_name="postgresql"} |~ "(?i)(PANIC|FATAL|out of memory|no space left|terminating connection due to)" [5m]))
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'PostgreSQL の重大ログを検出しました'
+          description: 'FATAL / PANIC / ディスク不足 / 強制切断のログを確認してください。認証失敗が多い場合は正規表現を調整します。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#logs'
+          dashboard_uid: journal-logs
+        labels:
+          severity: warning
+          category: logs
+          issue: '156'

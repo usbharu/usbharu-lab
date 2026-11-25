@@ -1,0 +1,133 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: push-sources
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: push-source-missing
+        title: PushSourceMissing
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                label_replace(absent_over_time(up{lab_host="ocms-ubuntu"}[5m]), "source", "ocms-ubuntu", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/db-pve3-host"}[5m]), "source", "db-pve3", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/ocms-pve3-host"}[5m]), "source", "ocms-pve3", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/worker", host_name="ocms-worker-vm110"}[5m]), "source", "ocms-worker-vm110", "", "") or
+                label_replace(absent_over_time(up{job="ocis"}[5m]), "source", "ocis", "", "")
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: '{{ $labels.source }} からのメトリクスが 5 分間ありません'
+          description: 'OTLP の送信停止、WireGuard の切断、Collector / Alloy / VM の停止を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#push-sources'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: push-sources
+          issue: '150'
+      - uid: ocms-service-missing
+        title: OcmsServiceMissing
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                label_replace(absent_over_time(target_info{job="usbharu-lab/bff"}[5m]), "service", "bff", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/catalog"}[5m]), "service", "catalog", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/search"}[5m]), "service", "search", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/transfer"}[5m]), "service", "transfer", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/embedding-runtime"}[5m]), "service", "embedding-runtime", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/recommendation-engine"}[5m]), "service", "recommendation-engine", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/worker", host_name="ocms-pve3"}[5m]), "service", "worker@ocms-pve3", "", "") or
+                label_replace(absent_over_time(target_info{job="usbharu-lab/worker", host_name="ocms-worker-vm110"}[5m]), "service", "worker@ocms-worker-vm110", "", "")
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: 'OCMS サービス {{ $labels.service }} の target_info が 5 分間ありません'
+          description: '対象サービスの停止、OTLP 送信停止、Collector 停止を確認してください。worker はホストごとに判定しています。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#push-sources'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: push-sources
+          issue: '150'

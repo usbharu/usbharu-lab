@@ -27,6 +27,7 @@ receivers:
       load: {}
       memory: {}
       disk: {}
+      filesystem: {}
       network: {}
       paging: {}
       processes: {}

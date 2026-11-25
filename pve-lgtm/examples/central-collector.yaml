@@ -42,8 +42,10 @@ receivers:
               regex: 'pve_(disk|sensor|zfs_arc)_.*|pve_exporter_.*|up'
               action: keep
 
-  # node_exporter inside the VMs. The instance label is normalized to the
-  # guest hostname so the Node Exporter Full dashboard can select a VM by name.
+  # node_exporter inside the VMs and in LXC 200. The instance label is
+  # normalized to the guest hostname so the Node Exporter Full dashboard can
+  # select a VM by name. LXC 200 is the LGTM host itself; its node_exporter
+  # provides the filesystem metrics used by the LgtmRootfs alert.
   prometheus/vms:
     config:
       scrape_configs:
@@ -59,6 +61,10 @@ receivers:
               labels:
                 vm: ocis
                 vmid: "101"
+            - targets: ['192.168.1.240:9100']
+              labels:
+                vm: lgtm
+                vmid: "200"
           metric_relabel_configs:
             - source_labels: [vm]
               target_label: instance

@@ -1,7 +1,9 @@
 """Validate deployment safeguards before pushing (Python 3.11+)."""
 from pathlib import Path
-import tomllib
 import json
+import subprocess
+import sys
+import tomllib
 
 root = Path(__file__).resolve().parents[1]
 resources = tomllib.loads((root / "komodo/resources.toml").read_text())
@@ -36,3 +38,13 @@ for filename in ["usbharulab-infra", "usbharulab-ocms"]:
         pos = panel["gridPos"]
         assert 0 <= pos["x"] and pos["x"] + pos["w"] <= 24
 print("Ordered deployment and dashboard structure passed")
+
+checker = root / "scripts" / "check-alerting.py"
+result = subprocess.run([sys.executable, str(checker)], capture_output=True, text=True)
+if result.returncode == 2 and "PyYAML is required" in (result.stdout + result.stderr):
+    print("WARNING: PyYAML is not installed; alerting validation was skipped")
+else:
+    print(result.stdout, end="")
+    if result.returncode != 0:
+        print(result.stderr, end="", file=sys.stderr)
+        raise SystemExit(result.returncode)

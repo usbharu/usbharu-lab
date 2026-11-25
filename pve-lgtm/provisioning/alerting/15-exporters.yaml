@@ -1,0 +1,291 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: exporters
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: exporter-metric-failures
+        title: ExporterMetricFailures
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum by (exporter, error_type, error_permanent, server_address) (rate(otelcol_exporter_send_failed_metric_points[5m]))
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.exporter }} のメトリクス送信が失敗しています ({{ $labels.error_type }}, permanent={{ $labels.error_permanent }}, {{ $labels.server_address }})'
+          description: 'error_type / error_permanent / server_address を確認してください。New Relic の場合はライセンスキー、リージョン、HTTP 402 を確認します。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#exporters'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: exporters
+          issue: '154'
+      - uid: exporter-log-failures
+        title: ExporterLogFailures
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum by (exporter, error_type, error_permanent, server_address) (rate(otelcol_exporter_send_failed_log_records[5m]))
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.exporter }} のログ送信が失敗しています ({{ $labels.error_type }}, permanent={{ $labels.error_permanent }}, {{ $labels.server_address }})'
+          description: 'error_type / error_permanent / server_address を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#exporters'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: exporters
+          issue: '154'
+      - uid: exporter-span-failures
+        title: ExporterSpanFailures
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'sum by (exporter, error_type, error_permanent, server_address) (rate(otelcol_exporter_send_failed_spans[5m]))'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.exporter }} のスパン送信が失敗しています ({{ $labels.error_type }}, permanent={{ $labels.error_permanent }}, {{ $labels.server_address }})'
+          description: 'Tempo / New Relic への送信経路とキューを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#exporters'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: exporters
+          issue: '154'
+      - uid: newrelic-no-success
+        title: NewRelicNoSuccess
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                (rate(otelcol_exporter_sent_metric_points{exporter="otlphttp/newrelic"}[10m]) == bool 0) and on() (rate(otelcol_exporter_sent_metric_points{exporter="otlphttp/mimir"}[10m]) > bool 0)
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'New Relic へのメトリクス送信成功が 0 です'
+          description: 'Mimir には送れているのに New Relic だけ成功していません。ライセンスキーとアカウントの利用上限を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#exporters'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: exporters
+          issue: '154'
+      - uid: exporter-queue-high
+        title: ExporterQueueHigh
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'otelcol_exporter_queue_size / otelcol_exporter_queue_capacity'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.exporter }} の送信キューが {{ $value }} です'
+          description: 'キューが飽和しています。送信先の遅延、失敗、ネットワークを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#exporters'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: exporters
+          issue: '154'

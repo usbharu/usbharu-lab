@@ -1,0 +1,1190 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: pve-hardware
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: pve-smart-health
+        title: PveSmartHealth
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_disk_health_status'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: '{{ $labels.node }} {{ $labels.device }} ({{ $labels.model }}) の SMART 異常'
+          description: 'SMART の健康状態が 1 未満です。smartctl -a で詳細を確認し、交換を検討してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-disk-temp-sata
+        title: PveDiskTempSata
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_disk_temperature_celsius{type=~"sata|unknown"}'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 60
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 15m
+        annotations:
+          summary: '{{ $labels.node }} {{ $labels.device }} の温度が {{ $value }}°C です'
+          description: 'SATA / 不明タイプのディスク温度が 60°C を超えています。冷却とエアフローを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-disk-temp-nvme
+        title: PveDiskTempNvme
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_disk_temperature_celsius{type="nvme"}'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 70
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 15m
+        annotations:
+          summary: '{{ $labels.node }} {{ $labels.device }} (NVMe) の温度が {{ $value }}°C です'
+          description: 'NVMe の温度が 70°C を超えています。ヒートシンクとエアフローを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-ssd-wear
+        title: PveSsdWear
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_disk_percentage_used'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 1h
+        annotations:
+          summary: '{{ $labels.node }} {{ $labels.device }} の SSD 使用率が {{ $value }}% です'
+          description: 'SSD の寿命消費が 90% を超えています。交換計画を立ててください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-ssd-spare
+        title: PveSsdSpare
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_disk_available_spare_percent'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 10
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 1h
+        annotations:
+          summary: '{{ $labels.node }} {{ $labels.device }} の予備領域が {{ $value }}% です'
+          description: 'NVMe の予備領域が 10% 未満です。交換を計画してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-node-rootfs
+        title: PveNodeRootfs
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_node_rootfs_used_bytes / pve_node_rootfs_total_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'PVE ノード {{ $labels.node }} の rootfs 使用率が {{ $value }} です'
+          description: 'rootfs の使用率が 80% を超えています。不要ファイルの整理または拡張を検討してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-node-rootfs-critical
+        title: PveNodeRootfsCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_node_rootfs_used_bytes / pve_node_rootfs_total_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'PVE ノード {{ $labels.node }} の rootfs 使用率が {{ $value }} です'
+          description: 'rootfs の使用率が 90% を超えています。早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-node-memory
+        title: PveNodeMemory
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_node_memory_used_bytes / pve_node_memory_total_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'PVE ノード {{ $labels.node }} のメモリ使用率が {{ $value }} です'
+          description: 'メモリ使用率が 90% を超えています。VM / LXC の割り当てを見直してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-node-swap
+        title: PveNodeSwap
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_node_swap_used_bytes / pve_node_swap_total_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 15m
+        annotations:
+          summary: 'PVE ノード {{ $labels.node }} の swap 使用率が {{ $value }} です'
+          description: 'swap を常用しています。メモリ圧迫の前兆です。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-zfs-health
+        title: PveZfsHealth
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_zfs_pool_health_status'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'ZFS プール {{ $labels.pool }} ({{ $labels.node }}) が degraded です'
+          description: 'zpool status でエラーと復旧手順を確認してください。RAIDZ2 は 3 台目の故障前に復旧が必要です。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-zfs-frag
+        title: PveZfsFrag
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_zfs_pool_frag_percent'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 1h
+        annotations:
+          summary: 'ZFS プール {{ $labels.pool }} の断片化が {{ $value }}% です'
+          description: '断片化が 80% を超えています。書き込み性能への影響を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-zfs-usage
+        title: PveZfsUsage
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_zfs_pool_alloc_bytes / pve_zfs_pool_size_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'ZFS プール {{ $labels.pool }} の使用率が {{ $value }} です'
+          description: 'プール使用率が 80% を超えています。スナップショットと不要データを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-zfs-usage-critical
+        title: PveZfsUsageCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_zfs_pool_alloc_bytes / pve_zfs_pool_size_bytes'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'ZFS プール {{ $labels.pool }} の使用率が {{ $value }} です'
+          description: 'プール使用率が 90% を超えています。早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-storage-usage
+        title: PveStorageUsage
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_storage_used_fraction'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'PVE ストレージ {{ $labels.storage }} ({{ $labels.node }}) の使用率が {{ $value }} です'
+          description: 'ストレージ使用率が 80% を超えています。ディスク拡張または整理を検討してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-storage-usage-critical
+        title: PveStorageUsageCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_storage_used_fraction'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'PVE ストレージ {{ $labels.storage }} ({{ $labels.node }}) の使用率が {{ $value }} です'
+          description: 'ストレージ使用率が 90% を超えています。早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-sensor-temp
+        title: PveSensorTemp
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_sensor_temperature_celsius'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.node }} のセンサー {{ $labels.sensor }} が {{ $value }}°C です'
+          description: 'CPU / マザーボードの温度が 80°C を超えています。冷却を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: pve-sensor-temp-critical
+        title: PveSensorTempCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'pve_sensor_temperature_celsius'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.node }} のセンサー {{ $labels.sensor }} が {{ $value }}°C です'
+          description: '温度が 90°C を超えています。熱暴走の危険があります。負荷を下げて冷却を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: ocms-ubuntu-rootfs
+        title: OcmsUbuntuRootfs
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                node_filesystem_avail_bytes{job="usbharu-lab/integrations/unix",mountpoint="/"} / node_filesystem_size_bytes{job="usbharu-lab/integrations/unix",mountpoint="/"}
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.15
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'ocms-ubuntu の / 空きが {{ $value }} です'
+          description: '空きが 15% を切っています。不要ファイルの整理またはディスク拡張を行ってください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: ocms-ubuntu-rootfs-critical
+        title: OcmsUbuntuRootfsCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                node_filesystem_avail_bytes{job="usbharu-lab/integrations/unix",mountpoint="/"} / node_filesystem_size_bytes{job="usbharu-lab/integrations/unix",mountpoint="/"}
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'ocms-ubuntu の / 空きが {{ $value }} です'
+          description: '空きが 10% を切っています。早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'
+      - uid: host-filesystem
+        title: HostFilesystem
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum by (job, mountpoint) (system_filesystem_usage{state="used", type=~"ext4|xfs|zfs|btrfs", mountpoint!~"/mnt/winiso|/mnt/virtioiso"}) /
+                sum by (job, mountpoint) (system_filesystem_usage{state=~"used|free|reserved", type=~"ext4|xfs|zfs|btrfs", mountpoint!~"/mnt/winiso|/mnt/virtioiso"})
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.job }} の {{ $labels.mountpoint }} 使用率が {{ $value }} です'
+          description: 'ホストのファイルシステム使用率が 80% を超えています。db-pve3 / ocms-pve3 は filesystem collector 追加後に有効になります。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: warning
+          category: pve-hardware
+          issue: '153'
+      - uid: host-filesystem-critical
+        title: HostFilesystemCritical
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum by (job, mountpoint) (system_filesystem_usage{state="used", type=~"ext4|xfs|zfs|btrfs", mountpoint!~"/mnt/winiso|/mnt/virtioiso"}) /
+                sum by (job, mountpoint) (system_filesystem_usage{state=~"used|free|reserved", type=~"ext4|xfs|zfs|btrfs", mountpoint!~"/mnt/winiso|/mnt/virtioiso"})
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.9
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.job }} の {{ $labels.mountpoint }} 使用率が {{ $value }} です'
+          description: 'ホストのファイルシステム使用率が 90% を超えています。早急に容量を確保してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#pve-hardware'
+          dashboard_uid: proxmox-ve
+        labels:
+          severity: critical
+          category: pve-hardware
+          issue: '153'

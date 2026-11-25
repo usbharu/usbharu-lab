@@ -1,0 +1,127 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: containers
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: container-missing
+        title: ContainerMissing
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-management", compose_service="core"}), "container", "ocms-management/core", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-management", compose_service="periphery"}), "container", "ocms-management/periphery", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-management", compose_service="mongo"}), "container", "ocms-management/mongo", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-management", compose_service="pocket-id"}), "container", "ocms-management/pocket-id", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-management", compose_service="traefik"}), "container", "ocms-management/traefik", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="vaultwardern", compose_service="vaultwarden"}), "container", "vaultwardern/vaultwarden", "", "") or
+                label_replace(absent(container_memory_working_set_bytes{compose_project="ocms-observability", compose_service="alloy"}), "container", "ocms-observability/alloy", "", "")
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: 'コンテナ {{ $labels.container }} のメトリクスが 5 分間ありません'
+          description: 'docker ps と Compose の状態を確認してください。意図的な停止は期限付き silence を使います。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#containers'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: containers
+          issue: '151'
+      - uid: container-restarting
+        title: ContainerRestarting
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'changes(container_start_time_seconds{compose_project=~"ocms-management|vaultwardern|ocms-observability"}[10m])'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 2
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        annotations:
+          summary: '{{ $labels.compose_project }}/{{ $labels.compose_service }} が 10 分間に {{ $value }} 回再起動しています'
+          description: 'クラッシュループの可能性があります。docker logs と restart 回数を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#containers'
+          dashboard_uid: usbharulab-infra
+        labels:
+          severity: warning
+          category: containers
+          issue: '151'

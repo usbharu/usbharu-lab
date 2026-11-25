@@ -1,0 +1,291 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: ocms-slo
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: ocms-5xx-ratio
+        title: OcmsHttp5xxRatio
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum by (job) (rate(http_server_request_duration_count{http_response_status_code=~"5.."}[5m])) /
+                clamp_min(sum by (job) (rate(http_server_request_duration_count[5m])), 1)
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.01
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.job }} の 5xx 比率が {{ $value }} です'
+          description: '5xx 比率が 1% を超えています（分母は最低 1 req/s で評価）。エラーログと依存サービスを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: ocms-slo
+          issue: '152'
+      - uid: ocms-latency-p95
+        title: OcmsLatencyP95
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'histogram_quantile(0.95, sum by (le, job) (rate(http_server_request_duration_bucket[5m])))'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 8
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: '{{ $labels.job }} の p95 レイテンシが {{ $value }} 秒です'
+          description: 'p95 が 8 秒を超えています。遅い処理と依存先を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: ocms-slo
+          issue: '152'
+      - uid: ocms-embedding-latency-p95
+        title: EmbeddingLatencyP95
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_bucket{job=~".*embedding-runtime"}[5m])))
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 30
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'embedding-runtime の p95 レイテンシが {{ $value }} 秒です'
+          description: 'p95 が 30 秒を超えています。推論の負荷とモデル取得を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: ocms-slo
+          issue: '152'
+      - uid: ocms-job-failures
+        title: OcmsJobFailures
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'sum by (job_type) (increase(media_job_completed{outcome="failed"}[15m]))'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: '{{ $labels.job_type }} の失敗が 15 分間に {{ $value }} 件です'
+          description: 'Job の失敗がしきい値を超えています。worker のログ、JOB_DEADLINE_EXCEEDED、外部ツールの失敗を確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: critical
+          category: ocms-slo
+          issue: '152'
+      - uid: ocms-job-retries
+        title: OcmsJobRetries
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'sum by (job_type) (increase(media_job_completed{outcome="retry"}[15m]))'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 50
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: '{{ $labels.job_type }} の retry が 15 分間に {{ $value }} 件です'
+          description: 'retry が増えています。失敗の前兆として worker のログを確認してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
+          dashboard_uid: usbharulab-ocms
+        labels:
+          severity: warning
+          category: ocms-slo
+          issue: '152'
