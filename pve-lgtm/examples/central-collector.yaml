@@ -135,7 +135,9 @@ processors:
           - set(attributes["host.name"], "ocms-worker-vm110") where attributes["service.name"] == "worker" and attributes["service.namespace"] == "usbharu-lab" and attributes["host.name"] == nil
       - context: datapoint
         statements:
-          - set(attributes["lab_host"], "ocms-worker-vm110") where resource.attributes["service.name"] == "worker" and resource.attributes["service.namespace"] == "usbharu-lab" and attributes["lab_host"] == nil
+          # Derive lab_host from the resource host.name so pve3 (ocms-pve3)
+          # and vm110 (ocms-worker-vm110) do not collide in Mimir.
+          - set(attributes["lab_host"], resource.attributes["host.name"]) where resource.attributes["service.name"] == "worker" and resource.attributes["service.namespace"] == "usbharu-lab" and attributes["lab_host"] == nil
     log_statements:
       - context: resource
         statements:

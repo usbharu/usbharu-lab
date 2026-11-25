@@ -162,9 +162,17 @@ worker/runtime は OTLP を pve-lgtm に直接送る。pve-lgtm の中央 Collec
 `service.name=worker` に `host.name=ocms-worker-vm110` と
 `service.namespace=usbharu-lab` を付ける。
 
-- Mimir: `media_job_completed{lab_host="ocms-worker-vm110"}`
 - Loki: `{service_name="worker"} | host_name="ocms-worker-vm110"`
 - Tempo: `{ resource.service.name = "worker" }`
+
+2026-11-25 より前は、pve3 worker のメトリクスも
+`lab_host="ocms-worker-vm110"` に合流するため、`increase()` が
+カウンタリセットを誤認して過大評価していた。collector 側は `lab_host` を
+`host.name` から導出するよう修正済みで、Mimir の `media_job_completed` は
+ホスト別に分かれている。Job の完了・失敗・retry は `usbharulab-ocms`
+ダッシュボードと `OcmsJobFailures` / `OcmsJobRetries` アラートでは、
+host_name / error_code を直接扱える Loki の `media.job_completed` /
+`media.job_failed` ログで評価している。
 
 pve-lgtm の Mimir exporter は `sending_queue.num_consumers: 1` にしている。
 複数 consumer で cumulative counter を送ると、Mimir が out-of-order として

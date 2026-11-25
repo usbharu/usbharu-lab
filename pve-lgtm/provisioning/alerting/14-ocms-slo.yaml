@@ -183,19 +183,21 @@ groups:
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 900
               to: 0
-            datasourceUid: mimir
+            datasourceUid: loki
+            queryType: instant
             model:
               datasource:
-                type: prometheus
-                uid: mimir
+                type: loki
+                uid: loki
               editorMode: code
-              expr: 'sum by (job_type) (increase(media_job_completed{outcome="failed"}[15m]))'
+              expr: >-
+                sum by (host_name, error_code) (count_over_time({service_namespace="usbharu-lab",service_name="worker"} |= "media.job_failed" | status="failed" [15m]))
               instant: true
               intervalMs: 1000
               legendFormat: __auto
-              range: false
+              queryType: instant
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -225,8 +227,8 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          summary: '{{ $labels.job_type }} の失敗が 15 分間に {{ $value }} 件です'
-          description: 'Job の失敗がしきい値を超えています。worker のログ、JOB_DEADLINE_EXCEEDED、外部ツールの失敗を確認してください。'
+          summary: '{{ $labels.host_name }} の Job 失敗（{{ $labels.error_code }}）が 15 分間に {{ $value }} 件です'
+          description: 'Job の失敗がしきい値を超えています。worker のログ、JOB_DEADLINE_EXCEEDED、外部ツールの失敗を確認してください。collector 修正前の pve3/vm110 ラベル衝突を避けるため、Loki の media.job_failed ログで評価しています。'
           runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
           dashboard_uid: usbharulab-ocms
         labels:
@@ -239,19 +241,21 @@ groups:
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 900
               to: 0
-            datasourceUid: mimir
+            datasourceUid: loki
+            queryType: instant
             model:
               datasource:
-                type: prometheus
-                uid: mimir
+                type: loki
+                uid: loki
               editorMode: code
-              expr: 'sum by (job_type) (increase(media_job_completed{outcome="retry"}[15m]))'
+              expr: >-
+                sum by (host_name, error_code) (count_over_time({service_namespace="usbharu-lab",service_name="worker"} |= "media.job_failed" | status="retry" [15m]))
               instant: true
               intervalMs: 1000
               legendFormat: __auto
-              range: false
+              queryType: instant
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -281,8 +285,8 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          summary: '{{ $labels.job_type }} の retry が 15 分間に {{ $value }} 件です'
-          description: 'retry が増えています。失敗の前兆として worker のログを確認してください。'
+          summary: '{{ $labels.host_name }} の retry（{{ $labels.error_code }}）が 15 分間に {{ $value }} 件です'
+          description: 'retry が増えています。失敗の前兆として worker のログを確認してください。collector 修正前の pve3/vm110 ラベル衝突を避けるため、Loki の media.job_failed ログで評価しています。'
           runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocms-slo'
           dashboard_uid: usbharulab-ocms
         labels:

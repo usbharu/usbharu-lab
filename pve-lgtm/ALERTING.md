@@ -245,12 +245,21 @@ embedding-runtime は `job="usbharu-lab/embedding-runtime"` を使う。
 | `OcmsHttp5xxRatio` | warning | 10m | 5xx / 全リクエスト > 1%（分母は最低 1 req/s） | OK |
 | `OcmsLatencyP95` | warning | 10m | p95 > 8 秒 | OK |
 | `EmbeddingLatencyP95` | warning | 10m | embedding の p95 > 30 秒 | OK |
-| `OcmsJobFailures` | critical | 5m | `increase(media_job_completed{outcome="failed"}[15m]) > 5` | OK |
-| `OcmsJobRetries` | warning | 5m | `increase(media_job_completed{outcome="retry"}[15m]) > 50` | OK |
+| `OcmsJobFailures` | critical | 5m | `sum by (host_name, error_code) (count_over_time({service_namespace="usbharu-lab",service_name="worker"} \|= "media.job_failed" \| status="failed" [15m])) > 5` | OK |
+| `OcmsJobRetries` | warning | 5m | `sum by (host_name, error_code) (count_over_time({service_namespace="usbharu-lab",service_name="worker"} \|= "media.job_failed" \| status="retry" [15m])) > 50` | OK |
 
 5xx は `http_response_status_code` ラベルを持つ bff / catalog / transfer / search /
 worker が対象。embedding-runtime / recommendation-engine はラベルが無いため対象外で、
 死活は #150 の `OcmsServiceMissing` で見る。
+
+Job 失敗・retry は Mimir の `media_job_completed` ではなく Loki の
+`media.job_failed` ログで評価する。2026-11-25 より前は pve3 worker の
+メトリクスが `lab_host=ocms-worker-vm110` に合流し、2 ホストの cumulative
+counter が 62↔39 と振動して `increase()` が実際の数十倍に過大評価されていた。
+collector 側は `lab_host` を `host.name` から導出するよう修正済みで、Mimir の
+`media_job_completed` もホスト別に分かれている。Grafana は host_name と
+error_code を直接扱える Loki ログベースのままにしている。失敗ログには
+`job_type` が無いので、`host_name` と `error_code` で group by している。
 
 <a id="pve-hardware"></a>
 
@@ -356,10 +365,12 @@ oCIS は現在トラフィック 0 のため、エラー率・レイテンシは
 | `TargetMissing`（`job="node"`） | LXC 200 の node_exporter 追加前は 2 < 3 |
 | `LgtmRootfs` / `LgtmRootfsCritical` | LXC 200 の node_exporter 追加前は系列が無く NoData Alerting |
 | `OcmsUbuntuRootfs` | `/` 空き 12.6% < 15% |
-| `OcmsJobFailures` | `media.process` が約 3,670 件 / 15 分 failed |
-| `OcmsJobRetries` | `media.process` が約 1,380 件 / 15 分 retry |
 | `ExporterMetricFailures` | New Relic が約 22.3 points/s 失敗 |
 | `NewRelicNoSuccess` | New Relic の送信成功 0、Mimir は成功 |
+
+`OcmsJobFailures` / `OcmsJobRetries` は、Mimir のラベル衝突による過大評価を
+避けるため Loki ログベースに変更した。実失敗は 24 時間で約 100 件、
+retry は約 70 件であり、平常時にこの 2 つが発火することはない。
 
 これらはアラート経路が動いていることの確認になる。原因を修正するか、
 作業中だけ期限付き silence（例: 24 時間）を使う。silence は #159 の観点で
