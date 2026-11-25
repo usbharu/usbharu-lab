@@ -217,9 +217,12 @@ python3 -m pip install --user pyyaml
 | --- | --- | --- | --- | --- |
 | `PushSourceMissing` | warning | 0s | `absent_over_time(...[5m])`（ocms-ubuntu / db-pve3 / ocms-pve3 / VM110 worker / ocis） | OK |
 | `OcmsServiceMissing` | warning | 0s | 各 OCMS サービスの `target_info` の `absent_over_time(...[5m])` | OK |
+| `HostMetricsMissing` | warning | 1m | pve2 / pve3 の `target_info` が 3 分欠落 | OK |
+| `HostFilesystemMissing` | warning | 5m | pve2 / pve3 の `system_filesystem_usage` が 10 分欠落 | OK |
 
 worker は `host_name="ocms-pve3"` と `host_name="ocms-worker-vm110"` を別々に判定する。
 embedding-runtime は `job="usbharu-lab/embedding-runtime"` を使う。
+`HostMetricsMissing` / `HostFilesystemMissing` は #162 の pve2 / pve3 hostmetrics 欠落検知。
 
 <a id="containers"></a>
 
@@ -308,6 +311,33 @@ db-pve3 / ocms-pve3 は filesystem collector 追加後に自動で対象にな�
 | `LgtmRootfs` | warning | 10m | LXC 200 `/` 空き < 15% | Alerting |
 | `LgtmRootfsCritical` | critical | 10m | 空き < 10% | Alerting |
 
+<a id="ingestion"></a>
+
+### #161 ingestion
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `LokiIngestionStopped` | warning | 0s | `sum(rate(loki_distributor_lines_received_total[5m])) < 0.001` | Alerting |
+| `MimirIngestionStopped` | warning | 0s | `sum(rate(cortex_distributor_received_samples_total[5m])) < 0.001` | Alerting |
+| `TempoIngestionStopped` | warning | 15m | `sum(rate(tempo_distributor_spans_received_total[5m])) < 0.001` | Alerting |
+
+ログ系ルール（`KomodoErrorLogs` / `PostgresFatalLogs`）は「エラー 0 件 = 正常」のため
+`noDataState: OK` のまま。Loki の取り込み停止は `LokiIngestionStopped` で別途検知する。
+Tempo はアイドル時の誤検知を避けるため `for: 15m` にしている。
+
+<a id="ocis"></a>
+
+### #160 ocis
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `OcisErrorRate` | warning | 10m | `sum(rate(ocis_proxy_errors_total[5m])) > 0.1`（トラフィックあり） | OK |
+| `OcisErrorRatio` | warning | 10m | エラー比率 > 1%（トラフィック > 0.1 req/s） | OK |
+| `OcisLatencyP95` | warning | 10m | p95 > 2 秒（トラフィック > 0.1 req/s） | OK |
+
+oCIS は現在トラフィック 0 のため、エラー率・レイテンシは NoData → OK。
+コンテナ状態・再起動の検知は VM101 への cAdvisor 追加が別途必要。
+
 <a id="logs"></a>
 
 ### #155 / #156 logs
@@ -377,6 +407,8 @@ PVE ホスト、Mimir、Tempo の停止など影響の大きいテストは、�
   （`PushSourceMissing` / `OcmsServiceMissing` / `ContainerMissing`）: `OK`
 - トラフィックや失敗が 0 件のときに系列が消えるもの: `OK`
   （死活は `TargetMissing` / `PushSourceMissing` / `OcmsServiceMissing` が別途見る）
+- ログ系の `OK` は、`LokiIngestionStopped` / `MimirIngestionStopped` /
+  `TempoIngestionStopped` が取り込み停止を別途検知する
 
 `OK` にしても、クエリ自体が失敗した場合は `execErrState: Alerting` で通知される。
 

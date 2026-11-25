@@ -671,7 +671,7 @@ curl -s -u "admin:$PASS" http://127.0.0.1:3000/api/dashboards/uid/usbharulab-ocm
 
 ### アラート導入（2026-11-25）
 
-- Grafana の file provisioning で 49 ルールを反映し、`provenance=file` を確認した
+- Grafana の file provisioning で 57 ルールを反映し、`provenance=file` を確認した
 - `OcmsJobFailures` / `OcmsJobRetries` / `ExporterMetricFailures` / `NewRelicNoSuccess` / `OcmsUbuntuRootfs` が実データで firing になった
 - LXC 200 に `prometheus-node-exporter` を追加し、`node` job が 3 ターゲットになった
 - db-pve3 / ocms-pve3 の hostmetrics に `filesystem` を追加し、`system_filesystem_usage` を確認した

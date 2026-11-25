@@ -1,0 +1,178 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: ocis
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: ocis-error-rate
+        title: OcisErrorRate
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: 'sum(rate(ocis_proxy_errors_total[5m])) and on() (sum(rate(ocis_proxy_requests_total[5m])) > 0)'
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'oCIS のエラーが増えています ({{ $value }}/s)'
+          description: 'ocis_proxy_errors_total の 5 分レートが 0.1/s を超えています。oCIS のログとプロキシを確認してください。トラフィック 0 のときは発火しません。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis'
+          dashboard_uid: ocis
+        labels:
+          severity: warning
+          category: ocis
+          issue: '160'
+      - uid: ocis-error-ratio
+        title: OcisErrorRatio
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                sum(rate(ocis_proxy_errors_total[5m])) / sum(rate(ocis_proxy_requests_total[5m])) and on() (sum(rate(ocis_proxy_requests_total[5m])) > 0.1)
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.01
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'oCIS のエラー比率が {{ $value }} です'
+          description: 'エラー比率が 1% を超えています。トラフィックが 0.1 req/s 未満のときは評価しません。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis'
+          dashboard_uid: ocis
+        labels:
+          severity: warning
+          category: ocis
+          issue: '160'
+      - uid: ocis-latency-p95
+        title: OcisLatencyP95
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: mimir
+            model:
+              datasource:
+                type: prometheus
+                uid: mimir
+              editorMode: code
+              expr: >-
+                histogram_quantile(0.95, sum by (le) (rate(ocis_proxy_duration_seconds_bucket[5m]))) and on() (sum(rate(ocis_proxy_requests_total[5m])) > 0.1)
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 2
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: threshold
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: 'oCIS の p95 レイテンシが {{ $value }} 秒です'
+          description: 'p95 が 2 秒を超えています。通常時の p95 を確認して閾値を調整してください。'
+          runbook_url: 'https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis'
+          dashboard_uid: ocis
+        labels:
+          severity: warning
+          category: ocis
+          issue: '160'
