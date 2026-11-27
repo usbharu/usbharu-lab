@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare R2 multipart upload and bucket size canary
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/lgtm-canary/r2_usage.py
+Nice=10
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

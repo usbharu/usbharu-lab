@@ -122,6 +122,87 @@ ssh root@192.168.1.254 'install -m 644 /tmp/config.yaml /etc/otelcol-contrib/con
 Mimir に出ることを確認する。PostgreSQL のデータディレクトリと WAL の領域が
 含まれていること。
 
+### 5. LGTM canary（LXC 200）
+
+```sh
+scripts/install-lgtm-canary.sh
+scripts/install-lgtm-canary.sh --update-baseline
+```
+
+`pve-lgtm/canary/*.py` を `/usr/local/lib/lgtm-canary/` に置き、1〜5 分間隔の
+systemd timer を有効にする。`GRAFANA_MONITOR_TOKEN` が無い場合は Viewer の
+サービスアカウント `external-monitor` とトークンを自動作成する。次の秘密値が必要。
+
+- `/opt/lgtm/.env`: `GF_SECURITY_ADMIN_PASSWORD`（既存）、
+  `KOMODO_API_KEY` / `KOMODO_API_SECRET`（GitOps heartbeat 用）
+- `/root/lgtm-s3.env`（0600）: R2 の `S3_ACCESS_KEY`、`S3_SECRET_KEY`、
+  `S3_ENDPOINT`、`S3_REGION`、`S3_BUCKET_{MIMIR,LOKI,TEMPO}`
+
+Komodo の API キーは、administrator でログインして
+`POST /auth/manage/CreateApiKey` に `{"name":"lgtm-gitops-canary","expires":0}` を
+送ると作成できる。応答の `key` / `secret` を `.env` に追記する。
+専用の読み取り専用ユーザーを作るまでは administrator 権限になるため、
+LXC 200 の root と同等に扱う。
+
+`--update-baseline` は現在の Grafana 設定を trusted baseline として保存する。
+`scripts/apply-grafana-alerting.sh` は provisioning の reload 後に自動で
+baseline を更新する。
+
+### 6. PostgreSQL / バックアップ（db-pve3）
+
+```sh
+scripts/install-postgres-monitoring.sh
+```
+
+`prometheus-postgres-exporter` を `:9187` で起動し、`postgres_exporter` ロールを
+`pg_monitor` に追加する。パスワードは `/etc/lgtm-canary/pg-exporter.env`（0600）に
+生成する。あわせて `/var/backups/postgresql/` への日次 `pg_dump -Fc`、
+`pg_restore --list` 検証、7 世代保持、Mimir への成功・失敗メトリクス送信を
+`postgres-backup.timer` で有効にする。初回は手動で 1 回実行される。
+
+LXC 200 の Collector に `192.168.1.253:9187` の scrape を追加するため、
+`scripts/apply-lgtm-collector.sh` も実行する。
+
+```sh
+scripts/apply-lgtm-collector.sh
+```
+
+### 7. ZFS scrub（pve3）
+
+```sh
+scripts/install-pve3-zfs.sh
+```
+
+`zpool status -j hdd` から scrub エラー、最終 scrub 時刻、vdev の
+read/write/checksum エラーを 1 時間ごとに Mimir へ送る。
+
+### 8. oCIS コンテナ（VM101）
+
+```sh
+scripts/install-ocis-docker-stats.sh
+```
+
+VM101 の `ocis-metrics` Collector に `docker_stats` receiver を追加し、
+Docker socket を read-only でマウントする。`container_state_status`、
+`container_restarts`、`container_uptime` が Mimir に出ることを確認する。
+
+### 9. 外部 dead-man switch（ocms-ubuntu VPS）
+
+```sh
+scripts/install-external-monitor.sh
+```
+
+VPS の `/etc/lab-external-monitor.env`（0600）に Grafana の Discord Webhook、
+`GRAFANA_MONITOR_TOKEN`、`OTLP_ENDPOINT=http://192.168.1.240:4318` を置き、
+1 分間隔で公開 URL と OTLP を確認する。2 回連続で失敗したら Discord へ直接通知する。
+`GRAFANA_MONITOR_TOKEN` は Grafana の Viewer サービスアカウント
+`external-monitor` のトークンで、`/api/datasources/uid/{mimir,loki,tempo}/health`
+から保存先の健全性も確認する。トークンは LXC 200 の `/opt/lgtm/.env` に
+`GRAFANA_MONITOR_TOKEN` として置き、再作成する場合は
+`pve-lgtm/canary/create_grafana_monitor_token.py` を LXC 200 で実行する。
+自宅 LAN の外から `192.168.1.240:4318` へ到達できる必要がある
+（WireGuard の経路と pve2 の MASQUERADE を確認する）。
+
 ## 反映
 
 ```sh
@@ -156,7 +237,7 @@ PVE_HOST=root@192.168.1.250 LXC_ID=200 scripts/apply-grafana-alerting.sh
 `--no-reload` を付けるとファイルのコピーだけ行う。`--skip-check` は PyYAML が
 無い環境向けの非常手段で、通常は使わない。
 
-`--rules-only` は `10-*.yaml` から `17-*.yaml` だけをコピーし、通知ポリシーと
+`--rules-only` は `10-*.yaml` から `26-*.yaml` だけをコピーし、通知ポリシーと
 コンタクトポイントは変更しない。Discord Webhook を設定する前にルールだけを
 先に反映し、評価状態を確認する場合に使う。このモードでは Git から削除した
 ルールファイルはライブに残るため、削除は通常モードで行う。
@@ -198,7 +279,10 @@ Discord 連携の埋め込みタイトルに付くリンクはレシーバー実
 
 すべてフォルダ `Alerts`、評価間隔 1 分。`NoData` は `noDataState` の値。
 `Alerting` は「データが無い = 異常」、`OK` は「データが無い = 正常」の意味。
-`execErrState` は全ルール `Alerting`。
+`execErrState` は全ルール `Alerting`。2026-11-27 時点で 99 ルール。
+`10-*.yaml` 〜 `19-*.yaml` が既存、`20-*.yaml` 〜 `26-*.yaml` が今回追加した
+PostgreSQL、GitOps、Grafana 改ざん検知、canary、R2、ZFS scrub、oCIS コンテナの
+ルール。
 
 <a id="targets"></a>
 
@@ -362,17 +446,188 @@ oCIS は現在トラフィック 0 のため、エラー率・レイテンシは
 | `KomodoErrorLogs` | warning | 5m | `count_over_time({service_name=~"komodo-.*"} \|~ "(?i)(error\|failed\|panic\|fatal)" [5m]) > 0` | OK |
 | `PostgresFatalLogs` | warning | 5m | `count_over_time({service_name="postgresql"} \|~ "(?i)(PANIC\|FATAL\|out of memory\|no space left\|terminating connection due to)" [5m]) > 0` | OK |
 
+<a id="postgresql"></a>
+
+### #156 PostgreSQL / backup
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `PostgresDown` (`postgres-down`) | critical | 2m | `pg_up < 1` | Alerting |
+| `PostgresExporterDown` (`postgres-exporter-down`) | critical | 5m | `up{job="postgres"} < 1` | Alerting |
+| `PostgresConnectionsHigh` (`postgres-connections-high`) | warning | 10m | 接続数 / `max_connections` > 80% | Alerting |
+| `PostgresLongTransaction` (`postgres-long-transaction`) | warning | 5m | `pg_stat_activity_max_tx_duration > 600` | Alerting |
+| `PostgresRollbacks` (`postgres-rollbacks`) | warning | 10m | ロールバック率 > 0.1/s | Alerting |
+| `PostgresDeadlocks` (`postgres-deadlocks`) | warning | 10m | デッドロック率 > 0 | Alerting |
+| `PostgresBackupStale` (`postgres-backup-stale`) | critical | 10m | 最終成功から 26 時間超 | Alerting |
+| `PostgresBackupFailed` (`postgres-backup-failed`) | critical | 0s | 15 分以内に失敗がある | OK |
+| `PostgresBackupRestoreUnverified` (`postgres-backup-unverified`) | critical | 1h | `postgres_backup_restore_verified < 1` | Alerting |
+
+`postgres_exporter` は `db-pve3` の `:9187` で動かし、LXC 200 の Collector から
+30 秒間隔で scrape する。`pg_up`、接続数、トランザクション、ロールバック、
+デッドロック、DB サイズを取得する。`pg_stat_activity_max_tx_duration` は
+10 分を超えるトランザクションを検知する。
+
+バックアップは `db-pve3` の `/var/backups/postgresql/` に日次で
+`pg_dump -Fc` を書き、`pg_restore --list` で読み出しを検証する。7 世代を保持する。
+最後の成功時刻、所要時間、サイズ、検証結果を Mimir に送る。失敗時は
+`postgres_backup_last_failure_timestamp_seconds` と
+`postgres_backup_restore_verified=0` を送り、成功時刻は更新しない。
+同じホスト上のバックアップなので、別ホスト / R2 への退避は別途必要。
+
+<a id="gitops"></a>
+
+### #155 GitOps heartbeat
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `GitopsHeartbeatStale` (`gitops-heartbeat-stale`) | warning | 5m | 最終成功から 15 分超 | Alerting |
+| `GitopsLastRunFailed` (`gitops-last-run-failed`) | critical | 5m | `gitops_state{state="failed"}` | OK |
+| `GitopsScheduleDisabled` (`gitops-schedule-disabled`) | warning | 10m | `gitops_schedule_enabled < 1` | Alerting |
+| `GitopsCanaryStale` (`gitops-canary-stale`) | critical | 0s | canary が 10 分更新なし | Alerting |
+| `GitopsApiFailing` (`gitops-api-failing`) | warning | 10m | `gitops_api_ok < 1` | Alerting |
+
+LXC 200 の `gitops_canary.py` が Komodo API の `ListProcedures` / `GetProcedure` を
+呼び、`usbharu-lab-gitops` の `last_run_at`（最後に成功した時刻）と state、
+スケジュール有効状態を取得する。`last_run_at` は成功時だけ更新されるため、
+「失敗が通知されない」「スケジュールが止まった」の両方を検知できる。
+Komodo の `failure_alert = true` は残し、通知経路が二重になることを許容する。
+
+Komodo の API キーは LXC 200 の `/opt/lgtm/.env` に
+`KOMODO_API_KEY` / `KOMODO_API_SECRET` として置く。読み取り専用の専用ユーザーを
+作れない場合は administrator のキーを使うため、LXC 200 の root 権限と同等に扱う。
+
+<a id="grafana-config"></a>
+
+### #159 Grafana 改ざん検知
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `LgtmConfigCanaryStale` (`lgtm-config-canary-stale`) | critical | 0s | canary が 10 分更新なし | Alerting |
+| `LgtmConfigApiFailing` (`lgtm-config-api-failing`) | warning | 10m | `lgtm_config_api_ok < 1` | Alerting |
+| `LgtmConfigBaselineMissing` (`lgtm-config-baseline-missing`) | warning | 10m | baseline なし | Alerting |
+| `LgtmConfigDrift` (`lgtm-config-drift`) | warning | 5m | カテゴリ別ハッシュが baseline と不一致 | Alerting |
+| `LgtmAlertRulesLow` (`lgtm-alert-rules-low`) | critical | 10m | ルール数 < 70 | Alerting |
+| `LgtmAlertRulePaused` (`lgtm-alert-rule-paused`) | warning | 10m | paused のルール > 0 | Alerting |
+| `LgtmSilenceCreated` (`lgtm-silence-created`) | warning | 0s | 15 分以内に新しい silence | Alerting |
+| `LgtmSilenceLong` (`lgtm-silence-long`) | warning | 10m | silence が 7 日超 | Alerting |
+
+`config_canary.py` は Grafana の provisioning API からアラートルール、
+コンタクトポイント、通知ポリシー、mute timing、データソース、ダッシュボードを取得し、
+カテゴリごとの SHA-256 を baseline と比較する。baseline は
+`scripts/apply-grafana-alerting.sh` の適用後に更新する。
+サイレンスは ID の増加と最大期間を別に記録する。UI でルールを削除・無効化・
+コンタクトポイント変更・サイレンス作成をしても、次の 2 分で検知できる。
+
+Grafana OSS は audit logging を持たないため、API の状態差分で代替する。
+この canary 自身を止められると検知できないが、`LgtmConfigCanaryStale` と
+外部 dead-man switch で多重化する。
+
+<a id="canary"></a>
+
+### #161 取り込み canary
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `LgtmMetricCanaryStale` (`lgtm-metric-canary-stale`) | critical | 0s | canary metric が 5 分更新なし | Alerting |
+| `LgtmLogCanaryMissing` (`lgtm-log-canary-missing`) | critical | 0s | `count_over_time({service_name="lgtm-canary"}[5m])` が 0 / NoData | Alerting |
+| `LgtmLogCanaryInvisible` (`lgtm-log-canary-invisible`) | critical | 5m | Loki から canary ログを検索できない | Alerting |
+| `LgtmTraceCanaryInvisible` (`lgtm-trace-canary-invisible`) | critical | 10m | Tempo から canary トレースを検索できない | Alerting |
+| `LgtmMimirCanaryInvisible` (`lgtm-mimir-canary-invisible`) | critical | 5m | Mimir から canary metric を検索できない | Alerting |
+| `ExternalMonitorStale` (`external-monitor-stale`) | critical | 0s | 外部 monitor が 10 分更新なし | Alerting |
+| `ExternalCheckFailing` (`external-check-failing`) | critical | 5m | 外部チェックのいずれかが失敗 | Alerting |
+
+`ingestion_canary.py` は 1 分ごとに OTLP/HTTP で
+`lgtm_canary_timestamp_seconds`、`lgtm-canary` ログ、canary トレースを送り、
+Grafana の datasource proxy 経由で Mimir / Loki / Tempo から読めることを確認する。
+書き込みと読み出しの両方を検証するため、Collector の exporter 停止、
+Loki のテナント設定、Tempo の querier 停止なども検知できる。
+
+`lgtm_canary_*_visible` は直前の canary を検索した結果で、今回のサンプルが
+まだ見えないことによる誤検知を避けるため、5〜10 分の猶予を持たせている。
+ログ系の既存ルール（`KomodoErrorLogs` / `PostgresFatalLogs`）は
+「エラー 0 件 = 正常」のため `noDataState: OK` のままにし、取り込み停止は
+この canary で検知する。
+
+<a id="external-monitor"></a>
+
+### #148 外部 dead-man switch
+
+`external_monitor.py` は自宅 LAN の外にある ocms-ubuntu VPS で動く。
+Grafana の `/api/health`、Grafana 経由の Mimir / Loki / Tempo データソース health、
+OTLP 4318（WireGuard 経由）、Komodo、Pocket ID、OCMS の `/healthz` を 1 分ごとに
+確認し、2 回連続で失敗したら Discord に直接通知する。
+Grafana / Mimir / Loki / Tempo を経由しないため、LXC 200 や pve2 が停止しても
+通知できる。復旧時も Discord に送る。同じ結果は Mimir にも送り、
+`ExternalCheckFailing` / `ExternalMonitorStale` で履歴を残す。
+
+外部 VPS 自体が停止した場合は通知できない。VPS の監視は別途必要。
+
+<a id="r2"></a>
+
+### #158 R2 / 保存量
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `R2MultipartUploads` (`r2-multipart-uploads`) | warning | 10m | 未完了 multipart > 100 | OK |
+| `R2MultipartUploadsCritical` (`r2-multipart-uploads-critical`) | critical | 5m | 未完了 multipart > 1,000 | OK |
+| `R2MultipartStale` (`r2-multipart-stale`) | warning | 30m | 最古の未完了が 24 時間超 | OK |
+| `R2UsageCanaryStale` (`r2-usage-canary-stale`) | critical | 0s | canary が 1 時間更新なし | Alerting |
+| `R2BucketGrowth` (`r2-bucket-growth`) | warning | 30m | 6 時間の傾きから 1 日 2 GiB 超 | Alerting |
+
+`r2_usage.py` は `aws s3api list-multipart-uploads` で Mimir / Loki / Tempo の
+未完了アップロードを数え、最古の経過時間を出す。バケットサイズとオブジェクト数は
+1 時間に 1 回 `aws s3 ls --summarize --recursive` で取得する。
+2026-11-19 の Tempo multipart 失敗（5,465 件 / 約 1.08 TiB）を、
+Tempo の完了済みブロックのメトリクスだけに頼らず検知する。
+
+認証情報は LXC 200 の `/root/lgtm-s3.env`（0600）を使う。
+未完了アップロードの削除は自動化しない。閾値を超えたら中身を確認してから
+`aws s3api abort-multipart-upload` を実行する。
+
+<a id="zfs-scrub"></a>
+
+### #153 ZFS scrub / vdev エラー
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `PveZfsScrubErrors` (`pve-zfs-scrub-errors`) | critical | 5m | scrub errors > 0 | OK |
+| `PveZfsVdevErrors` (`pve-zfs-vdev-errors`) | critical | 5m | vdev の read/write/checksum > 0 | OK |
+| `PveZfsScrubStale` (`pve-zfs-scrub-stale`) | warning | 1h | 最終 scrub から 35 日超 | Alerting |
+| `PveZfsScrubMetricsStale` (`pve-zfs-scrub-metrics-stale`) | critical | 0s | メトリクスが 3 時間更新なし | Alerting |
+| `PveZfsScrubApiFailing` (`pve-zfs-scrub-api-failing`) | warning | 10m | `zpool status -j` 失敗 | Alerting |
+
+`zfs_scrub.py` は pve3 で `zpool status -j hdd` を実行し、scrub のエラー数、
+最終 scrub 時刻、プール状態、vdev ごとの read/write/checksum エラーを出す。
+`pve_zfs_pool_health_status` はプール全体の状態しか見ないため、
+RAIDZ2 の 1 台がエラーを出し始めた段階を vdev 単位で検知する。
+
+<a id="ocis-container"></a>
+
+### #160 oCIS コンテナ
+
+| ルール (UID) | severity | for | 条件 | NoData |
+| --- | --- | --- | --- | --- |
+| `OcisContainerDown` (`ocis-container-down`) | critical | 2m | `count(container_uptime{container_name="ocis"}) < 1` | Alerting |
+| `OcisContainerRestarting` (`ocis-container-restarting`) | warning | 0s | 10 分間の再起動 > 0 | OK |
+| `OcisContainerMissing` (`ocis-container-missing`) | warning | 5m | `count(container_uptime{container_name="ocis"}) < 1` | Alerting |
+
+VM101 の `ocis-metrics` Collector に `docker_stats` receiver を追加し、
+Docker socket を read-only でマウントする。`container_state_status`、
+`container_restarts`、`container_uptime` を Mimir に送る。
+コンテナ名は `ocis` を対象にする。
+
 ## 導入直後に発火するアラート
 
-2026-11-25 時点の実データでは、次のルールが導入直後に発火する。
+2026-11-27 時点の実データでは、次のルールが導入直後に発火する。
 
 | ルール | 理由 |
 | --- | --- |
-| `TargetMissing`（`job="node"`） | LXC 200 の node_exporter 追加前は 2 < 3 |
-| `LgtmRootfs` / `LgtmRootfsCritical` | LXC 200 の node_exporter 追加前は系列が無く NoData Alerting |
-| `OcmsUbuntuRootfs` | `/` 空き 12.6% < 15% |
-| `ExporterMetricFailures` | New Relic が約 22.3 points/s 失敗 |
+| `ExporterMetricFailures` | New Relic が HTTP 402 で約 22 points/s 失敗 |
 | `NewRelicNoSuccess` | New Relic の送信成功 0、Mimir は成功 |
+| `PushSourceMissing` / `OcmsServiceMissing` | VM110 の runtime/worker を CPU 調査のため意図的に停止中 |
+| `OcmsLatencyP95` | 現在の p95 が閾値 8 秒を超過 |
+| `PveSensorTemp` | pve2 の CPU Package が 79°C |
+| `LgtmSilenceLong` | `NewRelicNoSuccess` を 14 日、VM110 を 7 日抑制する silence が存在 |
 
 `OcmsJobFailures` / `OcmsJobRetries` は、Mimir のラベル衝突による過大評価を
 避けるため Loki ログベースに変更した。実失敗は 24 時間で約 100 件、
@@ -404,6 +659,18 @@ retry は約 70 件であり、平常時にこの 2 つが発火することは�
 | #151 | pocket-id を 10 分に 3 回再起動 | `ContainerRestarting` | 低 |
 | #152 | 追加注入不要（既に失敗中） | `OcmsJobFailures` | なし |
 | #154 | 追加注入不要（既に失敗中） | `ExporterMetricFailures` | なし |
+| #155 | `systemctl stop lgtm-gitops-canary.timer` | `GitopsCanaryStale` が 10 分以内 | 低。再開 |
+| #155 | Komodo の Procedure を一時的に失敗させる | `GitopsLastRunFailed` が 5 分以内 | 低。次回成功で resolve |
+| #156 | `systemctl stop postgresql` | `PostgresDown` が 2 分以内 | 中。DB を使う OCMS を止める |
+| #156 | `mv /var/backups/postgresql` して timer を待つ | `PostgresBackupStale` が 26 時間後 | 低。戻す |
+| #158 | R2 にテスト用の multipart upload を残す | `R2MultipartUploads` が 10 分以内 | 低。abort する |
+| #159 | Grafana UI で一時ルールを削除 / silence を作成 | `LgtmConfigDrift` / `LgtmSilenceCreated` が 5 分以内 | 低。silence は削除 |
+| #161 | `systemctl stop lgtm-ingestion-canary.timer` | `LgtmMetricCanaryStale` が 5 分以内 | 低。再開 |
+| #161 | Loki の `/ready` を一時的に落とす | `LgtmLogCanaryMissing` | 中。Collector も影響 |
+| #148 | LXC 200 を停止（計画メンテ） | VPS から Discord へ 2 分以内 | 高。復旧手順を先に確認 |
+| #153 | `zpool scrub` を止める / テスト用エラーを注入 | `PveZfsScrubStale` / `PveZfsScrubErrors` | 中。実プールを壊さない |
+| #160 | `docker stop ocis` | `OcisContainerDown` が 2 分以内 | 中。oCIS が止まる |
+| #160 | `docker restart ocis` | `OcisContainerRestarting` | 中。短時間停止 |
 
 PVE ホスト、Mimir、Tempo の停止など影響の大きいテストは、別のメンテナンス枠で行う。
 ルールのクエリと閾値は Grafana のルールプレビューで確認できる。
@@ -437,35 +704,41 @@ PVE ホスト、Mimir、Tempo の停止など影響の大きいテストは、�
 
 | 場所 | 内容 |
 | --- | --- |
-| `/opt/lgtm/.env`（LXC 200、0600） | `GRAFANA_DISCORD_WEBHOOK_URL`、Grafana admin パスワード、New Relic キーなど |
+| `/opt/lgtm/.env`（LXC 200、0600） | `GRAFANA_DISCORD_WEBHOOK_URL`、Grafana admin パスワード、New Relic キー、`KOMODO_API_KEY` / `KOMODO_API_SECRET`、`GRAFANA_MONITOR_TOKEN` |
+| `/root/lgtm-s3.env`（LXC 200、0600） | R2 の endpoint / region / access key / secret / bucket 名 |
+| `/etc/lab-external-monitor.env`（ocms-ubuntu、0600） | Discord Webhook、`GRAFANA_MONITOR_TOKEN`、OTLP endpoint |
+| `/etc/lgtm-canary/pg-exporter.env`（db-pve3、0600） | `postgres_exporter` のパスワード |
 | Grafana のサービス環境変数 | `GRAFANA_DISCORD_WEBHOOK_URL` を compose から渡す |
 
 Webhook URL はこのリポジトリに置かない。`01-contact-points.yaml` は
 `$GRAFANA_DISCORD_WEBHOOK_URL` を参照するだけにしている。
+`GRAFANA_MONITOR_TOKEN` は Grafana の `external-monitor` サービスアカウント
+（Viewer）のトークンで、データソース health の読み取りだけに使う。
 
 ## 既知の制限と次の作業
 
-- **#148 監視の監視**: Grafana / LXC 200 が停止するとアラートも止まる。外部の
-  dead man's switch と外形監視が別途必要。Grafana の `Watchdog` ルール
-  （`vector(1)`）を外部へ送る構成はまだ入れていない。
-- **#156 PostgreSQL / バックアップ**: `pg_up`、接続数、バックアップ鮮度の
-  メトリクスが無い。postgres_exporter または OTel の postgresql receiver と、
-  `backup_last_success_timestamp_seconds` の実装が別途必要。
-- **#158 R2 / canary**: R2 の未完了 multipart upload、保存量の急増、
-  メトリクス・ログ・トレースの canary は未実装。
-- **#159 改ざん検知**: Grafana OSS は audit logging 非対応（Enterprise / Cloud のみ）。
-  現状の対策は file provisioning による UI 編集ロックとダッシュボードの
-  読み取り専用化まで。ルール件数・silence・コンタクトポイントの変更を検知する
-  API canary は次段階。silence は UI から作成できるため、期限付き運用にする。
-- **#155 GitOps heartbeat**: Komodo Procedure の成功をメトリクス化する仕組みが無い。
-  `gitops_last_success_timestamp_seconds` を Procedure の最後に push するか、
-  成功ログから導出する必要がある。
+- **#148 外部監視の単一障害点**: ocms-ubuntu VPS の `lab-external-monitor` が
+  自宅 LAN の外から公開 URL と OTLP を確認し、Discord へ直接通知する。
+  ただし VPS 自体が停止すると通知できない。VPS の死活は別の外部サービスで見る。
+- **#156 バックアップの保管場所**: 日次 `pg_dump` と `pg_restore --list` 検証は
+  db-pve3 上で動く。同じホスト・同じディスクなので、ディスク故障や VM 喪失には
+  耐えない。別ホストまたは R2 への退避が次の作業。
+- **#158 R2 の保存量**: multipart の件数・最古時刻は 5 分ごと、バケットサイズは
+  1 時間ごと。オブジェクト一覧を合計するため、バケットが大きくなると所要時間が
+  増える。R2 の Analytics API が使える場合はそちらへ置き換える。
+- **#159 改ざん検知の限界**: Grafana OSS は audit logging 非対応（Enterprise / Cloud
+  のみ）。API canary は UI からの編集・削除・サイレンスを検知するが、canary 自身を
+  停止されると検知できない。外部 dead-man switch と `LgtmConfigCanaryStale` で
+  多重化している。silence は UI から作成できるため、期限付き運用にする。
+- **#155 API キー**: Komodo の API キーは `usbharu-lab-gitops` の読み取りに使う。
+  専用の読み取り専用ユーザーを作るまでは administrator 権限のキーを LXC 200 に置く。
 - **#152 canary**: recommendation / embedding の機能 canary は未実装。
-- **#153 ZFS scrub**: `zpool status -x` の textfile metric 化は未実装。
-- **#151 restart**: cAdvisor が `container_start_time_seconds` を出さない場合は、
-  Docker の `start` / `die` イベントを Loki に取り込む方式へ切り替える。
+  BFF の `/healthz` は外部監視で見るが、推薦・埋め込みの実リクエストは検証しない。
 - **#154 原因**: New Relic の送信失敗（402 / キー / 支払い）はアラートでは直らない。
   別途修正が必要。
+- **#151 restart**: OCMS / 管理系のコンテナ再起動は既存の
+  `ContainerRestarting` が見る。oCIS は `docker_stats` の
+  `container_restarts` で別途見る。
 
 ## 参考
 

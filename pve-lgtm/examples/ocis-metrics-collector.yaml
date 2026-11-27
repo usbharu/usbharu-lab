@@ -1,22 +1,11 @@
-# OTel Collector sidecar for oCIS on VM101 (ocis).
-# oCIS exposes Prometheus metrics on 127.0.0.1:9205 inside the container.
-# Logs use the host journald receiver (Docker journald log driver), and traces
-# are exported directly by oCIS via OCIS_TRACING_*; this sidecar is metrics-only.
-# Run this collector with network_mode: "service:ocis" so it can scrape that
-# loopback address without publishing port 9205 on the LAN.
+# oCIS metrics sidecar on VM101 (192.168.1.52).
 #
-# Compose override:
-#   services:
-#     ocis-metrics:
-#       image: otel/opentelemetry-collector-contrib:0.165.0
-#       container_name: ocis-metrics
-#       restart: unless-stopped
-#       network_mode: "service:ocis"
-#       command: ["--config=/etc/otelcol-contrib/config.yaml"]
-#       volumes:
-#         - ./ocis-metrics-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
-#       depends_on:
-#         - ocis
+# The prometheus receiver scrapes the oCIS proxy metrics endpoint. The
+# docker_stats receiver adds container state, restart and uptime metrics so
+# Grafana can detect a stopped or crash-looping oCIS container without cAdvisor.
+#
+# The container needs read-only access to /var/run/docker.sock. See
+# pve-lgtm/README.md for the compose override.
 receivers:
   prometheus:
     config:
@@ -31,6 +20,22 @@ receivers:
             - target_label: instance
               replacement: ocis
 
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 30s
+    timeout: 10s
+    metrics:
+      container.cpu.usage.total:
+        enabled: true
+      container.memory.usage.total:
+        enabled: true
+      container.uptime:
+        enabled: true
+      container.restarts:
+        enabled: true
+      container.state.status:
+        enabled: true
+
 processors:
   memory_limiter:
     check_interval: 1s
@@ -44,6 +49,17 @@ processors:
       - key: host.name
         value: ocis
         action: upsert
+
+  # Promote the Docker resource attributes to datapoint labels. Mimir keeps
+  # resource attributes on target_info but not on every metric series, so the
+  # alert rules need container_name on the datapoint.
+  transform/container_labels:
+    error_mode: ignore
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["container_name"], resource.attributes["container.name"]) where attributes["container_name"] == nil
+
   batch:
     timeout: 5s
     send_batch_size: 4096
@@ -55,6 +71,6 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [prometheus]
-      processors: [memory_limiter, resource, batch]
+      receivers: [prometheus, docker_stats]
+      processors: [memory_limiter, resource, transform/container_labels, batch]
       exporters: [otlp_http/pve_lgtm]

@@ -1,0 +1,282 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: zfs-scrub
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: pve-zfs-scrub-errors
+    title: PveZfsScrubErrors
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(zfs_pool_scrub_errors[2h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: ZFS scrub でエラーが検出されました ({{ $labels.pool }})
+      description: zpool status -v でエラーのあるファイルを確認し、RAIDZ2 の冗長性が残っているうちに対処してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#zfs-scrub
+    labels:
+      severity: critical
+      category: zfs-scrub
+      issue: '153'
+  - uid: pve-zfs-vdev-errors
+    title: PveZfsVdevErrors
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(zfs_vdev_errors[2h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: ZFS vdev に read/write/checksum エラーがあります ({{ $labels.pool }}/{{ $labels.vdev }}/{{ $labels.kind }})
+      description: ディスク、ケーブル、HBA を確認してください。RAIDZ2 は 2 台まで耐えますが、3 台目の故障前に交換が必要です。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#zfs-scrub
+    labels:
+      severity: critical
+      category: zfs-scrub
+      issue: '153'
+  - uid: pve-zfs-scrub-stale
+    title: PveZfsScrubStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - last_over_time(zfs_pool_scrub_last_timestamp_seconds[2h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 3024000
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 1h
+    annotations:
+      summary: ZFS scrub が 35 日以上実行されていません ({{ $labels.pool }})
+      description: 月次 scrub の cron と zpool status を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#zfs-scrub
+    labels:
+      severity: warning
+      category: zfs-scrub
+      issue: '153'
+  - uid: pve-zfs-scrub-metrics-stale
+    title: PveZfsScrubMetricsStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - max(last_over_time(zfs_scrub_canary_timestamp_seconds[2h]))
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 10800
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: ZFS scrub メトリクスが 3 時間更新されていません
+      description: pve3 の zfs-scrub-metrics.timer と OTLP 経路を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#zfs-scrub
+    labels:
+      severity: critical
+      category: zfs-scrub
+      issue: '153'
+  - uid: pve-zfs-scrub-api-failing
+    title: PveZfsScrubApiFailing
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(zfs_scrub_api_ok[2h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: zpool status からメトリクスを取得できません
+      description: pve3 で zpool status -j hdd を実行し、ZFS の状態を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#zfs-scrub
+    labels:
+      severity: warning
+      category: zfs-scrub
+      issue: '153'

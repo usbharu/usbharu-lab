@@ -1,0 +1,15 @@
+[Unit]
+Description=External dead-man switch for the usbharu-lab LGTM stack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=OTLP_ENDPOINT=http://192.168.1.240:4318
+EnvironmentFile=-/etc/lab-external-monitor.env
+ExecStart=/usr/bin/python3 /opt/lab-external-monitor/external_monitor.py
+Nice=10
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target

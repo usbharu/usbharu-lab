@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Grafana configuration canary every two minutes
+
+[Timer]
+OnBootSec=3m
+OnUnitActiveSec=2m
+AccuracySec=30s
+Unit=lgtm-config-canary.service
+
+[Install]
+WantedBy=timers.target

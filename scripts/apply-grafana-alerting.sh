@@ -40,7 +40,7 @@ Usage: scripts/apply-grafana-alerting.sh [options]
 Options:
   --check        Validate the YAML locally and exit.
   --skip-check   Skip local validation (PyYAML may not be installed).
-  --rules-only   Copy only 10-*.yaml through 17-*.yaml. Use this for a staged
+  --rules-only   Copy only 10-*.yaml through 26-*.yaml. Use this for a staged
                  rollout before the Discord webhook is configured; the existing
                  notification policy is left untouched.
   --dashboards   Also copy dashboards.yaml as provider.yaml and reload it.
@@ -120,8 +120,8 @@ ssh "$PVE_HOST" "pct exec $LXC_ID -- mkdir -p $ALERTING_DEST"
 
 if [[ "$RULES_ONLY" == true ]]; then
   echo "  (rules only; routing files are left untouched)"
-  ssh "$PVE_HOST" "pct exec $LXC_ID -- bash -lc 'rm -f $ALERTING_DEST/1[0-9]-*.yaml'"
-  files=("$ALERTING_SRC"/1[0-9]-*.yaml)
+  ssh "$PVE_HOST" "pct exec $LXC_ID -- bash -lc 'rm -f $ALERTING_DEST/1[0-9]-*.yaml $ALERTING_DEST/2[0-9]-*.yaml'"
+  files=("$ALERTING_SRC"/1[0-9]-*.yaml "$ALERTING_SRC"/2[0-9]-*.yaml)
 else
   # Mirror the Git directory: remove YAML files that no longer exist in Git.
   ssh "$PVE_HOST" "pct exec $LXC_ID -- bash -lc 'rm -f $ALERTING_DEST/*.yaml'"
@@ -166,6 +166,14 @@ if [[ "$APPLY_DASHBOARDS" == true ]]; then
     echo "dashboard reload failed; restarting Grafana" >&2
     ssh "$PVE_HOST" "pct exec $LXC_ID -- bash -lc 'cd /opt/lgtm && docker compose restart grafana'"
   fi
+fi
+
+# The configuration canary compares the live API against a baseline. A
+# deliberate Git apply is the trusted change path, so refresh the baseline
+# after the provisioning reload. The canary is optional; the installer adds it.
+if ssh "$PVE_HOST" "pct exec $LXC_ID -- test -f /usr/local/lib/lgtm-canary/config_canary.py" >/dev/null 2>&1; then
+  echo "refreshing the Grafana configuration baseline ..."
+  ssh "$PVE_HOST" "pct exec $LXC_ID -- /usr/bin/python3 /usr/local/lib/lgtm-canary/config_canary.py --update-baseline" || true
 fi
 
 echo "done. Check Alerting -> Alert rules and Contact points in Grafana."

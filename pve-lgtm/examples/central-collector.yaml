@@ -69,6 +69,20 @@ receivers:
             - source_labels: [vm]
               target_label: instance
 
+  # postgres_exporter on db-pve3. The exporter listens on the LAN; the host
+  # firewall allows only the LGTM LXC and the database VMs.
+  prometheus/postgres:
+    config:
+      scrape_configs:
+        - job_name: postgres
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+            - targets: ['192.168.1.253:9187']
+              labels:
+                instance: db-pve3
+                vm: db-pve3
+
   # LGTM stack self-monitoring. Keep only the series used by the LGTM dashboard.
   prometheus/lgtm:
     config:
@@ -230,11 +244,11 @@ service:
   extensions: [health_check]
   pipelines:
     metrics/mimir:
-      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
+      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/postgres, prometheus/lgtm]
       processors: [memory_limiter, transform/remote_worker, batch]
       exporters: [otlphttp/mimir]
     metrics/newrelic:
-      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/lgtm]
+      receivers: [otlp, prometheus/pve, prometheus/vms, prometheus/postgres, prometheus/lgtm]
       processors: [memory_limiter, transform/remote_worker, filter/newrelic_delta, interval/newrelic, batch]
       exporters: [otlphttp/newrelic]
     logs/loki:

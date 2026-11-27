@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the ZFS scrub metrics collector hourly
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=1h
+AccuracySec=1m
+Unit=zfs-scrub-metrics.service
+
+[Install]
+WantedBy=timers.target

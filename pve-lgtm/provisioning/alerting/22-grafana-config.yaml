@@ -1,0 +1,447 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: grafana-config
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: lgtm-config-canary-stale
+    title: LgtmConfigCanaryStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - max(lgtm_config_canary_timestamp_seconds)
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 600
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: Grafana 設定 canary が停止しています
+      description: LXC 200 の lgtm-config-canary.timer と Grafana API の疎通を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: critical
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-config-api-failing
+    title: LgtmConfigApiFailing
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_config_api_ok
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: Grafana API から設定を取得できません
+      description: Grafana の admin 認証、/api/v1/provisioning 系 API、コンテナ状態を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-config-baseline-missing
+    title: LgtmConfigBaselineMissing
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_config_baseline_present
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: Grafana 設定の基準値がありません
+      description: scripts/apply-grafana-alerting.sh を実行して baseline を作成してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-config-drift
+    title: LgtmConfigDrift
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_config_matches_baseline
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: Grafana 設定が基準値から変わっています ({{ $labels.kind }})
+      description: UI からの編集、ルール削除、コンタクトポイント変更、データソース変更の可能性があります。Git の内容と Grafana を比較してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-alert-rules-low
+    title: LgtmAlertRulesLow
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_alert_rules_total
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 80
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: Grafana のアラートルール数が想定より少なすぎます ({{ $value }})
+      description: ルールの一括削除、provisioning の失敗、Folder の変更を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: critical
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-alert-rule-paused
+    title: LgtmAlertRulePaused
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_alert_rules_paused
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: 一時停止中のアラートルールがあります ({{ $value }} 件)
+      description: UI から paused にされたルールを確認し、意図した変更なら Git に反映してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-silence-created
+    title: LgtmSilenceCreated
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: delta(lgtm_silences_created_total[15m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: 新しいサイレンスが作成されました
+      description: メンテナンス用なら期限と理由を確認してください。7 日を超えるサイレンスは LgtmSilenceLong で通知されます。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'
+  - uid: lgtm-silence-long
+    title: LgtmSilenceLong
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: lgtm_silence_max_duration_seconds
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 604800
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: 7 日を超えるサイレンスがあります
+      description: 長期間のサイレンスは通知を止める抜け道になります。期限を短くし、理由と follow-up を残してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#grafana-config
+    labels:
+      severity: warning
+      category: grafana-config
+      issue: '159'

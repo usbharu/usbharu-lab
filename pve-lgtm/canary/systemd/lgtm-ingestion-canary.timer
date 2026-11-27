@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the LGTM ingestion canary every minute
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=1m
+AccuracySec=15s
+Unit=lgtm-ingestion-canary.service
+
+[Install]
+WantedBy=timers.target

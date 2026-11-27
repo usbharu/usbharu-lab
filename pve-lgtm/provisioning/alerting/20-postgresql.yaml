@@ -1,0 +1,503 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: postgresql
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: postgres-down
+    title: PostgresDown
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: pg_up
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 2m
+    annotations:
+      summary: PostgreSQL が停止しています
+      description: pg_up が 0 です。PostgreSQL のプロセス、ソケット、ディスク、ログを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+      dashboard_uid: journal-logs
+    labels:
+      severity: critical
+      category: postgresql
+      issue: '156'
+  - uid: postgres-exporter-down
+    title: PostgresExporterDown
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: up{job="postgres"}
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: postgres_exporter を scrape できません
+      description: db-pve3:9187 の exporter が停止しているか、LXC 200 から到達できません。exporter と firewall を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: critical
+      category: postgresql
+      issue: '156'
+  - uid: postgres-connections-high
+    title: PostgresConnectionsHigh
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: sum(pg_stat_database_numbackends) / max(pg_settings_max_connections)
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0.8
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: PostgreSQL の接続数が上限の {{ $value }} です
+      description: 接続枯渇の前に、アプリの接続プール、アイドル接続、max_connections を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: warning
+      category: postgresql
+      issue: '156'
+  - uid: postgres-long-transaction
+    title: PostgresLongTransaction
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: pg_stat_activity_max_tx_duration
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 600
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: 10 分を超えるトランザクションがあります
+      description: 長時間トランザクションは vacuum を妨げます。pg_stat_activity で state=active のクエリを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: warning
+      category: postgresql
+      issue: '156'
+  - uid: postgres-rollbacks
+    title: PostgresRollbacks
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: sum(rate(pg_stat_database_xact_rollback[5m]))
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0.1
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: PostgreSQL のロールバックが増えています ({{ $value }}/s)
+      description: アプリのエラー、デッドロック、制約違反を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: warning
+      category: postgresql
+      issue: '156'
+  - uid: postgres-deadlocks
+    title: PostgresDeadlocks
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: sum(rate(pg_stat_database_deadlocks[5m]))
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: PostgreSQL でデッドロックが発生しています
+      description: PostgreSQL のログで deadlock detected を確認し、ロック順序を修正してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: warning
+      category: postgresql
+      issue: '156'
+  - uid: postgres-backup-stale
+    title: PostgresBackupStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 172800
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - last_over_time(postgres_backup_last_success_timestamp_seconds[2d])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 93600
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: OCMS のバックアップが 26 時間以上成功していません
+      description: postgres-backup.timer の実行結果、pg_dump のエラー、/var/backups/postgresql の空き容量を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: critical
+      category: postgresql
+      issue: '156'
+  - uid: postgres-backup-failed
+    title: PostgresBackupFailed
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - last_over_time(postgres_backup_last_failure_timestamp_seconds[1h])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 900
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: OCMS のバックアップが失敗しました
+      description: journalctl -u postgres-backup と pg_dump / pg_restore の出力を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: critical
+      category: postgresql
+      issue: '156'
+  - uid: postgres-backup-unverified
+    title: PostgresBackupRestoreUnverified
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 172800
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(postgres_backup_restore_verified[2d])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 1h
+    annotations:
+      summary: バックアップの読み出し検証ができていません
+      description: pg_restore --list が失敗しています。ダンプの破損、権限、ディスクを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#postgresql
+    labels:
+      severity: critical
+      category: postgresql
+      issue: '156'

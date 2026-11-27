@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish ZFS scrub and vdev error metrics
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=OTLP_ENDPOINT=http://192.168.1.240:4318
+ExecStart=/usr/bin/python3 /usr/local/lib/lgtm-canary/zfs_scrub.py
+Nice=10
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

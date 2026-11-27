@@ -1,0 +1,282 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: r2
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: r2-multipart-uploads
+    title: R2MultipartUploads
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(r2_multipart_upload_count[15m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 100
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 10m
+    annotations:
+      summary: R2 の未完了 multipart upload が {{ $value }} 件あります ({{ $labels.bucket }})
+      description: Tempo / Mimir / Loki の S3 クライアントのエラーを確認し、必要なら未完了アップロードを中止してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#r2
+    labels:
+      severity: warning
+      category: r2
+      issue: '158'
+  - uid: r2-multipart-uploads-critical
+    title: R2MultipartUploadsCritical
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(r2_multipart_upload_count[15m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1000
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: R2 の未完了 multipart upload が 1,000 件を超えています ({{ $labels.bucket }})
+      description: 2026-11-19 と同様の失敗が再発しています。R2 の使用量と課金、Tempo のログを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#r2
+    labels:
+      severity: critical
+      category: r2
+      issue: '158'
+  - uid: r2-multipart-stale
+    title: R2MultipartStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: last_over_time(r2_multipart_oldest_age_seconds[15m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 86400
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 30m
+    annotations:
+      summary: 24 時間以上残っている multipart upload があります ({{ $labels.bucket }})
+      description: アップロード失敗の兆候です。Tempo / Mimir / Loki のログと R2 の状態を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#r2
+    labels:
+      severity: warning
+      category: r2
+      issue: '158'
+  - uid: r2-usage-canary-stale
+    title: R2UsageCanaryStale
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: time() - max(last_over_time(r2_usage_canary_timestamp_seconds[1h]))
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 3600
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: R2 使用量 canary が停止しています
+      description: LXC 200 の lgtm-r2-usage.timer、AWS CLI、R2 の認証情報を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#r2
+    labels:
+      severity: critical
+      category: r2
+      issue: '158'
+  - uid: r2-bucket-growth
+    title: R2BucketGrowth
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 21600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: deriv(r2_bucket_size_bytes[6h]) * 86400
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 2147483648
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 30m
+    annotations:
+      summary: R2 バケットが 1 日あたり 2 GiB 以上増加しています ({{ $labels.bucket }})
+      description: 保存量の急増は R2 の課金に直結します。Tempo / Loki / Mimir の保持設定と不要データを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#r2
+    labels:
+      severity: warning
+      category: r2
+      issue: '158'

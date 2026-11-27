@@ -12,11 +12,11 @@ Komodo 管理の `stacks/observability/`（`ocms-ubuntu` の Alloy）からは�
 
 | 場所 | 役割 |
 | --- | --- |
-| LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared、node_exporter |
+| LXC 200 `lgtm`（192.168.1.240） | Grafana、Mimir、Loki、Tempo、OTel Collector、cloudflared、node_exporter、canary timers |
 | PVE pve2（192.168.1.250） | Go pve-exporter（systemd、`:9221`、クラスタ API と pve2 のローカルハードウェア）、OTel Collector（hostmetrics + journald）、WireGuard ゲートウェイ |
 | PVE pve3（192.168.1.251） | Go pve-exporter（systemd、`:9221`、pve3 のローカルハードウェアのみ）、OTel Collector（hostmetrics + journald） |
 | VM100 `picoclaw`（192.168.1.78） | node_exporter、OTel Collector（journald） |
-| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar、oCIS トレース |
+| VM101 `ocis`（192.168.1.52） | node_exporter、OTel Collector（journald + oCIS ログ）、oCIS metrics sidecar（docker_stats）、oCIS トレース |
 | ocms-ubuntu VPS（外部VPS） | Alloy、Komodo、OCMS。メトリクス・ログ・トレースを WireGuard 経由で LXC 200 へ送る |
 | VM110 `ocms-worker`（192.168.1.53） | OCMS remote worker/runtime。OTLP を LXC 200 へ送る |
 | WireGuard | ocms-ubuntu `wg0` `10.0.0.1/24` ↔ pve2 `wg0` `10.0.0.3/32`、VM110 `10.0.0.4/32` |
@@ -48,6 +48,30 @@ PVE/VM journald ── OTLP 4317 ───────────────�
 - PVE ホスト（pve2 / pve3）と VM の journald は全ログ（カーネル含む）を OTLP で LXC 200 に送る。
 - ocms-ubuntu の Alloy は Ubuntu・Docker・Komodo・OCMS のメトリクス・ログ・トレースを
   OTLP/HTTP で LXC 200 に送る。Grafana Cloud は使用しない。
+
+## 追加の監視コンポーネント
+
+2026-11-27 に、アラートだけでは検知できなかった経路を追加した。設定は
+`pve-lgtm/canary/` と `pve-lgtm/provisioning/alerting/20-*.yaml` 〜 `26-*.yaml`。
+
+| 場所 | コンポーネント | 目的 |
+| --- | --- | --- |
+| LXC 200 | `lgtm-ingestion-canary.timer` | 1 分ごとに OTLP で metric / log / trace を送り、Mimir / Loki / Tempo から読めることを確認 |
+| LXC 200 | `lgtm-config-canary.timer` | Grafana のルール・コンタクトポイント・ポリシー・データソース・ダッシュボード・サイレンスの差分を 2 分ごとに検知 |
+| LXC 200 | `lgtm-gitops-canary.timer` | Komodo の `usbharu-lab-gitops` の最終成功時刻とスケジュール状態を 2 分ごとに取得 |
+| LXC 200 | `lgtm-r2-usage.timer` | R2 の未完了 multipart upload、最古の経過時間、バケットサイズを 5 分 / 1 時間ごとに取得 |
+| db-pve3 | `prometheus-postgres-exporter` + `postgres-backup.timer` | `pg_up`、接続数、トランザクション、ロールバック、デッドロックと、日次 `pg_dump -Fc` + `pg_restore --list` 検証 |
+| pve3 | `zfs-scrub-metrics.timer` | `zpool status -j hdd` から scrub エラー、最終 scrub 時刻、vdev エラーを取得 |
+| VM101 | `ocis-metrics` の `docker_stats` | oCIS コンテナの uptime / restart を取得。Docker socket は read-only、GID 988 |
+| ocms-ubuntu VPS | `lab-external-monitor.timer` | 自宅 LAN の外から Grafana / Mimir / Loki / Tempo / OTLP / Komodo / Pocket ID / OCMS を 1 分ごとに確認し、失敗時に Discord へ直接通知 |
+
+セットアップは `pve-lgtm/ALERTING.md` の「前提」にコマンドをまとめている。
+外部 VPS の監視は `pve2` / LXC 200 に依存しないため、監視スタック全体が
+停止した場合でも Discord に通知できる。VPS 自体の停止は別途監視が必要。
+
+`config_canary.py` の baseline は `scripts/apply-grafana-alerting.sh` が
+provisioning reload 後に更新する。UI からルールを編集・削除した場合は
+baseline と一致しなくなり、`LgtmConfigDrift` が通知する。
 
 ## New Relic への送信
 
@@ -513,8 +537,10 @@ PostgreSQL ログ用）。Grafana では `{host_name="db-pve3"}` や
 | `/etc/pve-exporter/config.yml`（pve2 / pve3） | PVE API トークン。root:pve-exporter 0640 |
 | `/etc/wireguard/wg0.conf`（pve2） | pve2 の秘密鍵と VPS の公開鍵。0600 |
 | `/etc/wireguard/wg0.conf`（ocms-ubuntu） | VPS の秘密鍵と pve2 ピア。0600 |
-| `/opt/lgtm/.env` | Grafana admin パスワード、Cloudflare Tunnel トークン、Pocket ID の client secret、New Relic ライセンスキー。0600 |
+| `/opt/lgtm/.env` | Grafana admin パスワード、Cloudflare Tunnel トークン、Pocket ID の client secret、New Relic ライセンスキー、Komodo API キー、Grafana monitor トークン。0600 |
 | `/root/lgtm-s3.env` | R2 の endpoint、bucket、access key、secret。0600 |
+| `/etc/lgtm-canary/pg-exporter.env`（db-pve3） | `postgres_exporter` のパスワード。0600 |
+| `/etc/lab-external-monitor.env`（ocms-ubuntu） | Discord Webhook、Grafana monitor トークン、OTLP endpoint。0600 |
 | `/var/lib/pve-exporter/smart.json` | SMART 収集結果。0644（exporter が読む） |
 
 `examples/` の設定はプレースホルダのみ。`token_secret` や

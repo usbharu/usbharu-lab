@@ -1,0 +1,13 @@
+[Unit]
+Description=Komodo GitOps heartbeat canary
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/lgtm-canary/gitops_canary.py
+Nice=10
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

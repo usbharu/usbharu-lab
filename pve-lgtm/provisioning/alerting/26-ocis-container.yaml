@@ -1,0 +1,172 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: ocis-container
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: ocis-container-down
+    title: OcisContainerDown
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: count(container_uptime{container_name="ocis"})
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 2m
+    annotations:
+      summary: oCIS コンテナが running ではありません
+      description: VM101 で docker ps と docker logs ocis を確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis-container
+    labels:
+      severity: critical
+      category: ocis-container
+      issue: '160'
+  - uid: ocis-container-restarting
+    title: OcisContainerRestarting
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 900
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: increase(container_restarts{container_name="ocis"}[10m])
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: OK
+    execErrState: Alerting
+    for: 0s
+    annotations:
+      summary: oCIS コンテナが再起動しました
+      description: docker inspect ocis の RestartCount とログを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis-container
+    labels:
+      severity: warning
+      category: ocis-container
+      issue: '160'
+  - uid: ocis-container-missing
+    title: OcisContainerMissing
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: mimir
+      model:
+        datasource:
+          type: prometheus
+          uid: mimir
+        editorMode: code
+        expr: count(container_uptime{container_name="ocis"})
+        instant: true
+        intervalMs: 1000
+        legendFormat: __auto
+        refId: A
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: threshold
+    noDataState: Alerting
+    execErrState: Alerting
+    for: 5m
+    annotations:
+      summary: oCIS コンテナのメトリクスが 5 分間ありません
+      description: VM101 の ocis-metrics collector と Docker socket のマウントを確認してください。
+      runbook_url: https://github.com/usbharu/usbharu-lab/blob/komodo/pve-lgtm/ALERTING.md#ocis-container
+    labels:
+      severity: warning
+      category: ocis-container
+      issue: '160'

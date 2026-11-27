@@ -1,0 +1,13 @@
+[Unit]
+Description=LGTM ingestion canary (metric/log/trace freshness)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/lgtm-canary/ingestion_canary.py
+Nice=10
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
