@@ -188,6 +188,12 @@ python3 -m pip install --user pyyaml
 通知本文は `usbharu-lab` テンプレートで、summary / description / severity / issue を
 含める。`runbook_url` はこのファイルの該当セクションを指す。
 
+本文末尾の「アラート詳細を開く」は `.GeneratorURL`（Grafana が組み立てる
+`/alerting/grafana/<ルールUID>/view`）へのリンクで、ルール詳細ページへ飛ぶ。
+Discord 連携の埋め込みタイトルに付くリンクはレシーバー実装で
+`/alerting/list` に固定されており、テンプレートからは変更できない。ルール一覧では
+なく詳細を開きたいので、本文側にリンクを置いている。
+
 ## ルール一覧
 
 すべてフォルダ `Alerts`、評価間隔 1 分。`NoData` は `noDataState` の値。

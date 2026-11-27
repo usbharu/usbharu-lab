@@ -10,5 +10,6 @@ templates:
       **{{ .Annotations.summary }}**
       {{ .Annotations.description }}
       severity: `{{ .Labels.severity }}` / issue: #{{ .Labels.issue }}
+      {{ if .GeneratorURL }}[アラート詳細を開く]({{ .GeneratorURL }}){{ end }}
       {{ end }}
       {{ end }}
